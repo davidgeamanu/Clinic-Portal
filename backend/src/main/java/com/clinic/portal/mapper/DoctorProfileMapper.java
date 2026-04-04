@@ -1,0 +1,41 @@
+package com.clinic.portal.mapper;
+
+import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
+import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
+import com.clinic.portal.model.DoctorProfile;
+import com.clinic.portal.model.User;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+public class DoctorProfileMapper {
+
+    private final SpecializationMapper specializationMapper;
+
+    public DoctorProfileMapper(SpecializationMapper specializationMapper) {
+        this.specializationMapper = specializationMapper;
+    }
+
+    public DoctorProfileResponseDTO toDto(DoctorProfile profile) {
+        User user = profile.getUser();
+
+        List<SpecializationResponseDTO> specializations = profile.getSpecializations()
+                .stream()
+                .map(specializationMapper::toDto)
+                .toList();
+
+        return new DoctorProfileResponseDTO(
+                profile.getId(),
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                profile.getLicenseNumber(),
+                profile.getBiography(),
+                profile.getConsultationFee(),
+                specializations
+        );
+    }
+}
