@@ -22,5 +22,5 @@ app:
     secret: ${JWT_SECRET}
     expiration-minutes: 60
   security:
-    login-url:
-    allowed-urls:
+    login-url: /auth/login
+    allowed-urls: /auth/register,/swagger-ui/**,/v3/api-docs/**
