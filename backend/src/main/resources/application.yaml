@@ -24,3 +24,5 @@ app:
   security:
     login-url: /auth/login
     allowed-urls: /auth/register,/swagger-ui/**,/v3/api-docs/**
+  storage:
+    location: uploads
