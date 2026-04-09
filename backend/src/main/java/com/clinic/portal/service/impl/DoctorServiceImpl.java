@@ -2,7 +2,8 @@ package com.clinic.portal.service.impl;
 
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
-import com.clinic.portal.exception.ResourceNotFoundException;
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.mapper.DoctorProfileMapper;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.Specialization;
@@ -15,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -35,7 +38,7 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public DoctorProfileResponseDTO getProfileById(Long profileId) {
         DoctorProfile profile = doctorProfileRepository.findById(profileId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
         return doctorProfileMapper.toDto(profile);
     }
 
@@ -44,15 +47,17 @@ public class DoctorServiceImpl implements DoctorService {
     public DoctorProfileResponseDTO updateProfile(Long userId, DoctorProfileUpdateDTO dto) {
         DoctorProfile profile = findProfileByUserId(userId);
 
-        if (dto.biography()       != null) profile.setBiography(dto.biography());
-        if (dto.consultationFee() != null) profile.setConsultationFee(dto.consultationFee());
+        if (dto.biography() != null)
+            profile.setBiography(dto.biography());
+        if (dto.consultationFee() != null)
+            profile.setConsultationFee(dto.consultationFee());
 
-        // Replace specialization list if provided — sending an empty list clears them all
+        // Replace specialization list if provided sending an empty list clears them all
         if (dto.specializationIds() != null) {
             List<Specialization> specializations = dto.specializationIds().stream()
                     .map(id -> specializationRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Specialization not found: " + id)))
-                    .toList();
+                            .orElseThrow(() -> new DataNotFoundException(ExceptionCode.SPECIALIZATION_NOT_FOUND)))
+                    .collect(Collectors.toCollection(ArrayList::new));
             profile.setSpecializations(specializations);
         }
 
@@ -68,15 +73,15 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public List<DoctorProfileResponseDTO> getDoctorsBySpecialization(Long specializationId) {
         Specialization specialization = specializationRepository.findById(specializationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Specialization not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.SPECIALIZATION_NOT_FOUND));
         return doctorProfileRepository.findBySpecializationsContaining(specialization)
                 .stream().map(doctorProfileMapper::toDto).toList();
     }
 
     private DoctorProfile findProfileByUserId(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.USER_NOT_FOUND));
         return doctorProfileRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
     }
 }

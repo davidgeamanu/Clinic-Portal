@@ -3,9 +3,10 @@ package com.clinic.portal.service.impl;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
-import com.clinic.portal.exception.ConflictException;
-import com.clinic.portal.exception.InvalidOperationException;
-import com.clinic.portal.exception.ResourceNotFoundException;
+import com.clinic.portal.exception.BusinessException;
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.DuplicateDataException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.exception.UnauthorizedException;
 import com.clinic.portal.mapper.AppointmentMapper;
 import com.clinic.portal.model.Appointment;
@@ -44,11 +45,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     /**
      * Defines which status transitions are legal.
      * Any transition not in this map is rejected by validateTransition().
-     * Transition logic lives here (service layer), not in the entity or enum.
      */
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> VALID_TRANSITIONS = Map.of(
-            AppointmentStatus.SCHEDULED,   Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.RESCHEDULED),
-            AppointmentStatus.CONFIRMED,   Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED),
+            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.RESCHEDULED),
+            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED),
             AppointmentStatus.RESCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED)
     );
 
@@ -57,15 +57,15 @@ public class AppointmentServiceImpl implements AppointmentService {
     public AppointmentResponseDTO bookAppointment(Long patientUserId, AppointmentRequestDTO dto) {
         User patientUser = findUser(patientUserId);
         PatientProfile patient = patientProfileRepository.findByUser(patientUser)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.PATIENT_NOT_FOUND));
 
         DoctorProfile doctor = doctorProfileRepository.findById(dto.doctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
 
         // Double-booking guard: reject if doctor has any appointment overlapping this window
         LocalDateTime endTime = dto.scheduledAt().plusMinutes(dto.durationMinutes());
         if (appointmentRepository.existsByDoctorAndScheduledAtBetween(doctor, dto.scheduledAt(), endTime)) {
-            throw new ConflictException("Doctor already has an appointment in this time slot");
+            throw new DuplicateDataException(ExceptionCode.APPOINTMENT_SLOT_TAKEN);
         }
 
         Appointment appointment = Appointment.builder()
@@ -98,7 +98,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public List<AppointmentResponseDTO> getPatientAppointments(Long patientUserId) {
         User user = findUser(patientUserId);
         PatientProfile patient = patientProfileRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.PATIENT_NOT_FOUND));
         return appointmentRepository.findByPatientOrderByScheduledAtDesc(patient)
                 .stream().map(appointmentMapper::toDto).toList();
     }
@@ -107,7 +107,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public List<AppointmentResponseDTO> getDoctorAppointments(Long doctorUserId) {
         User user = findUser(doctorUserId);
         DoctorProfile doctor = doctorProfileRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
         return appointmentRepository.findByDoctorOrderByScheduledAtAsc(doctor)
                 .stream().map(appointmentMapper::toDto).toList();
     }
@@ -119,9 +119,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Only the patient or doctor involved in this appointment may change its status
         Long patientUserId = appointment.getPatient().getUser().getId();
-        Long doctorUserId  = appointment.getDoctor().getUser().getId();
+        Long doctorUserId = appointment.getDoctor().getUser().getId();
         if (!requestingUserId.equals(patientUserId) && !requestingUserId.equals(doctorUserId)) {
-            throw new UnauthorizedException("You are not part of this appointment");
+            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
         validateTransition(appointment.getStatus(), dto.status());
@@ -130,8 +130,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Notify the other party about the status change
         User patientUser = appointment.getPatient().getUser();
-        User doctorUser  = appointment.getDoctor().getUser();
-        User recipient   = requestingUserId.equals(patientUserId) ? doctorUser : patientUser;
+        User doctorUser = appointment.getDoctor().getUser();
+        User recipient = requestingUserId.equals(patientUserId) ? doctorUser : patientUser;
 
         notificationService.send(
                 recipient,
@@ -146,27 +146,26 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void validateTransition(AppointmentStatus current, AppointmentStatus next) {
         Set<AppointmentStatus> allowed = VALID_TRANSITIONS.get(current);
         if (allowed == null || !allowed.contains(next)) {
-            throw new InvalidOperationException(
-                    "Cannot transition appointment from " + current + " to " + next);
+            throw new BusinessException(ExceptionCode.APPOINTMENT_CANNOT_BE_MODIFIED);
         }
     }
 
     private NotificationType notificationTypeFor(AppointmentStatus status) {
         return switch (status) {
-            case CONFIRMED   -> NotificationType.APPOINTMENT_CONFIRMED;
-            case CANCELLED   -> NotificationType.APPOINTMENT_CANCELLED;
+            case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
+            case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
             case RESCHEDULED -> NotificationType.APPOINTMENT_RESCHEDULED;
-            default          -> NotificationType.GENERAL;
+            default -> NotificationType.GENERAL;
         };
     }
 
     private Appointment findAppointment(Long id) {
         return appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.APPOINTMENT_NOT_FOUND));
     }
 
     private User findUser(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.USER_NOT_FOUND));
     }
 }

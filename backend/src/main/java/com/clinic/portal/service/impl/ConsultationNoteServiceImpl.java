@@ -3,9 +3,10 @@ package com.clinic.portal.service.impl;
 import com.clinic.portal.dto.consultation.ConsultationNoteRequestDTO;
 import com.clinic.portal.dto.consultation.ConsultationNoteResponseDTO;
 import com.clinic.portal.dto.consultation.MedicalDocumentResponseDTO;
-import com.clinic.portal.exception.ConflictException;
-import com.clinic.portal.exception.InvalidOperationException;
-import com.clinic.portal.exception.ResourceNotFoundException;
+import com.clinic.portal.exception.BusinessException;
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.DuplicateDataException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.exception.UnauthorizedException;
 import com.clinic.portal.mapper.ConsultationNoteMapper;
 import com.clinic.portal.mapper.MedicalDocumentMapper;
@@ -15,11 +16,7 @@ import com.clinic.portal.model.MedicalDocument;
 import com.clinic.portal.model.User;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.model.enums.NotificationType;
-import com.clinic.portal.repository.AppointmentRepository;
-import com.clinic.portal.repository.ConsultationNoteRepository;
-import com.clinic.portal.repository.DoctorProfileRepository;
-import com.clinic.portal.repository.MedicalDocumentRepository;
-import com.clinic.portal.repository.UserRepository;
+import com.clinic.portal.repository.*;
 import com.clinic.portal.service.ConsultationNoteService;
 import com.clinic.portal.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +50,6 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
     @Value("${app.storage.location}")
     private String storageLocation;
 
-    /** Accepted MIME types — restrict what doctors can upload */
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "application/pdf",
             "image/jpeg",
@@ -70,17 +66,17 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
 
         // Verify this doctor owns the appointment
         if (!appointment.getDoctor().getUser().getId().equals(doctorUserId)) {
-            throw new UnauthorizedException("You are not the doctor for this appointment");
+            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
         // Notes can only be written for completed appointments
         if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
-            throw new InvalidOperationException("Consultation notes can only be added to COMPLETED appointments");
+            throw new BusinessException(ExceptionCode.APPOINTMENT_CANNOT_BE_MODIFIED);
         }
 
         // Prevent duplicate notes
         if (consultationNoteRepository.findByAppointment(appointment).isPresent()) {
-            throw new ConflictException("A consultation note already exists for this appointment");
+            throw new DuplicateDataException(ExceptionCode.CONSULTATION_NOTE_ALREADY_EXISTS);
         }
 
         ConsultationNote note = ConsultationNote.builder()
@@ -109,7 +105,7 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
     public ConsultationNoteResponseDTO getNoteByAppointment(Long appointmentId) {
         Appointment appointment = findAppointment(appointmentId);
         ConsultationNote note = consultationNoteRepository.findByAppointment(appointment)
-                .orElseThrow(() -> new ResourceNotFoundException("No consultation note found for this appointment"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.CONSULTATION_NOTE_NOT_FOUND));
         return consultationNoteMapper.toDto(note);
     }
 
@@ -117,16 +113,16 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
     @Transactional
     public MedicalDocumentResponseDTO uploadDocument(Long noteId, MultipartFile file, Long doctorUserId) {
         ConsultationNote note = consultationNoteRepository.findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Consultation note not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.CONSULTATION_NOTE_NOT_FOUND));
 
         // Verify the doctor uploading owns this note's appointment
         if (!note.getAppointment().getDoctor().getUser().getId().equals(doctorUserId)) {
-            throw new UnauthorizedException("You are not the doctor for this consultation");
+            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new InvalidOperationException("File type not allowed. Accepted: PDF, images, Word documents");
+            throw new BusinessException(ExceptionCode.INVALID_FILE_TYPE);
         }
 
         String storagePath = saveFileToDisk(file, noteId);
@@ -144,8 +140,7 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
 
     /**
      * Saves the uploaded file to disk and returns the storage path.
-     * The filename is a UUID — never use the original filename as a path component
-     * (path traversal vulnerability: attacker could upload a file named "../../etc/passwd").
+     * The filename is a UUID
      */
     private String saveFileToDisk(MultipartFile file, Long noteId) {
         try {
@@ -160,7 +155,7 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
 
             return targetPath.toString();
         } catch (IOException e) {
-            throw new InvalidOperationException("Failed to store file: " + e.getMessage());
+            throw new BusinessException(ExceptionCode.FILE_STORAGE_ERROR);
         }
     }
 
@@ -173,6 +168,6 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
 
     private Appointment findAppointment(Long id) {
         return appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.APPOINTMENT_NOT_FOUND));
     }
 }

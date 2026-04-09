@@ -1,7 +1,8 @@
 package com.clinic.portal.service.impl;
 
 import com.clinic.portal.dto.notification.NotificationResponseDTO;
-import com.clinic.portal.exception.ResourceNotFoundException;
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.exception.UnauthorizedException;
 import com.clinic.portal.mapper.NotificationMapper;
 import com.clinic.portal.model.Notification;
@@ -49,11 +50,11 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.NOTIFICATION_NOT_FOUND));
 
         // Ensure users can only mark their own notifications as read
         if (!notification.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("You cannot modify another user's notifications");
+            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
         notification.setRead(true);
@@ -84,6 +85,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.USER_NOT_FOUND));
     }
 }

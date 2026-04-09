@@ -5,8 +5,9 @@ import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
-import com.clinic.portal.exception.ConflictException;
-import com.clinic.portal.exception.ResourceNotFoundException;
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.DuplicateDataException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.mapper.DoctorProfileMapper;
 import com.clinic.portal.mapper.SpecializationMapper;
 import com.clinic.portal.mapper.UserMapper;
@@ -23,7 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -52,7 +55,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public UserResponseDTO setActiveStatus(Long userId, boolean active) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.USER_NOT_FOUND));
         user.setActive(active);
         return userMapper.toDto(userRepository.save(user));
     }
@@ -61,10 +64,10 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public DoctorProfileResponseDTO createDoctor(AdminCreateDoctorDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new ConflictException("An account with this email already exists");
+            throw new DuplicateDataException(ExceptionCode.EMAIL_ALREADY_EXISTS);
         }
         if (doctorProfileRepository.existsByLicenseNumber(dto.licenseNumber())) {
-            throw new ConflictException("A doctor with this license number already exists");
+            throw new DuplicateDataException(ExceptionCode.LICENSE_NUMBER_ALREADY_EXISTS);
         }
 
         User user = User.builder()
@@ -78,12 +81,12 @@ public class AdminServiceImpl implements AdminService {
 
         userRepository.save(user);
 
-        List<Specialization> specializations = List.of();
+        List<Specialization> specializations = new ArrayList<>();
         if (dto.specializationIds() != null && !dto.specializationIds().isEmpty()) {
             specializations = dto.specializationIds().stream()
                     .map(id -> specializationRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Specialization not found: " + id)))
-                    .toList();
+                            .orElseThrow(() -> new DataNotFoundException(ExceptionCode.SPECIALIZATION_NOT_FOUND)))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
 
         DoctorProfile profile = DoctorProfile.builder()
@@ -105,7 +108,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public SpecializationResponseDTO createSpecialization(SpecializationRequestDTO dto) {
         if (specializationRepository.existsByName(dto.name())) {
-            throw new ConflictException("Specialization already exists: " + dto.name());
+            throw new DuplicateDataException(ExceptionCode.SPECIALIZATION_ALREADY_EXISTS);
         }
         Specialization specialization = Specialization.builder()
                 .name(dto.name())
@@ -118,7 +121,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void deleteSpecialization(Long id) {
         if (!specializationRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Specialization not found");
+            throw new DataNotFoundException(ExceptionCode.SPECIALIZATION_NOT_FOUND);
         }
         specializationRepository.deleteById(id);
     }

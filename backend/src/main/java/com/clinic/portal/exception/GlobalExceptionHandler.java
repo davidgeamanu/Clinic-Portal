@@ -67,6 +67,17 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ExceptionBody handleUnauthorized(UnauthorizedException exception) {
+        return ExceptionBody.builder()
+                .timestamp(ZonedDateTime.now())
+                .code(exception.getCode())
+                .message(exception.getMessage())
+                .details(Collections.emptyMap())
+                .build();
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ExceptionBody handleAccessDenied(AccessDeniedException ignored) {
