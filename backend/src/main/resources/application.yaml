@@ -23,6 +23,6 @@ app:
     expiration-minutes: 60
   security:
     login-url: /auth/login
-    allowed-urls: /auth/register,/swagger-ui/**,/v3/api-docs/**
+    allowed-urls: /auth/register,/auth/logout,/swagger-ui/**,/v3/api-docs/**
   storage:
     location: uploads
