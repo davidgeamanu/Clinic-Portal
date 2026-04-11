@@ -51,6 +51,6 @@ public class AuthServiceImpl implements AuthService {
 
         patientProfileRepository.save(profile);
 
-        return new AuthResponseDTO(user.getRole(), user.getId());
+        return new AuthResponseDTO(user.getRole(), user.getId(), user.getEmail());
     }
 }

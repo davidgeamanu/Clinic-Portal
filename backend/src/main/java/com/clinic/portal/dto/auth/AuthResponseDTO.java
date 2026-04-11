@@ -10,5 +10,6 @@ import com.clinic.portal.model.enums.Role;
  */
 public record AuthResponseDTO(
         Role role,
-        Long userId
+        Long userId,
+        String email
 ) {}

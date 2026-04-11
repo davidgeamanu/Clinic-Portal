@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +31,12 @@ public interface AuthController {
     })
     @ResponseStatus(HttpStatus.OK)
     void login(@RequestBody LoginRequestDTO dto);
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Clears the JWT HttpOnly cookie.")
+    @ApiResponse(responseCode = "204", description = "Logged out successfully")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void logout(HttpServletResponse response);
 
     @PostMapping("/register")
     @Operation(summary = "Register", description = "Create a new patient account.")

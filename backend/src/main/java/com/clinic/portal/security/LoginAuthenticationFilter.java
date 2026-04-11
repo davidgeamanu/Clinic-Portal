@@ -1,5 +1,6 @@
 package com.clinic.portal.security;
 
+import com.clinic.portal.dto.auth.AuthResponseDTO;
 import com.clinic.portal.dto.auth.LoginRequestDTO;
 import com.clinic.portal.exception.ExceptionBody;
 import com.clinic.portal.exception.ExceptionCode;
@@ -74,6 +75,14 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
         cookieService.addAccessTokenCookie(response, token);
 
         response.setStatus(HttpStatus.OK.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        try {
+            AuthResponseDTO body = new AuthResponseDTO(principal.getRole(), principal.getId(), principal.getEmail());
+            objectMapper.writeValue(response.getWriter(), body);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
