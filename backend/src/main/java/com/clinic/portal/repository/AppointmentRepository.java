@@ -27,12 +27,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Doctor dashboard: filter by status (e.g. only CONFIRMED appointments)
     List<Appointment> findByDoctorAndStatus(DoctorProfile doctor, AppointmentStatus status);
 
-    // Conflict check: does the doctor already have a booking in this time window?
-    // Used before confirming a new appointment to prevent double-booking.
-    boolean existsByDoctorAndScheduledAtBetween(
+    // Conflict check: does the doctor already have an active booking in this time window?
+    // Excludes CANCELLED appointments so cancelled slots can be rebooked.
+    boolean existsByDoctorAndScheduledAtBetweenAndStatusNot(
             DoctorProfile doctor,
             LocalDateTime from,
-            LocalDateTime to
+            LocalDateTime to,
+            AppointmentStatus status
     );
 
     // Authorization check: does this appointment belong to the given patient or doctor profile?
