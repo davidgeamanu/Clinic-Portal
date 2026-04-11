@@ -62,9 +62,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         DoctorProfile doctor = doctorProfileRepository.findById(dto.doctorId())
                 .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
 
-        // Double-booking guard: reject if doctor has any appointment overlapping this window
+        //reject if doctor has any active appointment overlapping this window
         LocalDateTime endTime = dto.scheduledAt().plusMinutes(dto.durationMinutes());
-        if (appointmentRepository.existsByDoctorAndScheduledAtBetween(doctor, dto.scheduledAt(), endTime)) {
+        if (appointmentRepository.existsByDoctorAndScheduledAtBetweenAndStatusNot(
+                doctor, dto.scheduledAt(), endTime, AppointmentStatus.CANCELLED)) {
             throw new DuplicateDataException(ExceptionCode.APPOINTMENT_SLOT_TAKEN);
         }
 
