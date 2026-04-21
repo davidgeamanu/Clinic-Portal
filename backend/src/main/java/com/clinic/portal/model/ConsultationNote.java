@@ -8,14 +8,6 @@ import java.util.List;
 
 /**
  * Medical notes recorded by the doctor after completing an appointment.
- *
- * Kept as a separate entity from Appointment (SRP):
- *   - Appointment = scheduling concern
- *   - ConsultationNote = clinical concern
- * Merging them would bloat Appointment and tangle two distinct responsibilities.
- *
- * All text fields use columnDefinition = "TEXT" — medical notes must never be
- * silently truncated by a VARCHAR limit.
  */
 @Entity
 @Table(name = "consultation_notes")

@@ -9,10 +9,6 @@ import java.util.List;
 /**
  * A medical specialization (e.g. "Cardiology", "Dermatology").
  * Managed by Admin. Shared across many doctors.
- *
- * The "inverse" side of the Doctor ↔ Specialization many-to-many.
- * mappedBy means DoctorProfile owns the join table — Specialization just
- * references it without maintaining it.
  */
 @Entity
 @Table(name = "specializations")

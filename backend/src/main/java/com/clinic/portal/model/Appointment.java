@@ -8,13 +8,6 @@ import java.time.LocalDateTime;
 
 /**
  * An appointment booking between a patient and a doctor.
- *
- * This is the central entity of the system — it links PatientProfile,
- * DoctorProfile, and (after completion) ConsultationNote.
- *
- * Both @ManyToOne relationships use FetchType.LAZY (default for @ManyToOne
- * is actually EAGER — we override it to LAZY here because loading every
- * appointment should not auto-join the full patient and doctor rows).
  */
 @Entity
 @Table(name = "appointments")

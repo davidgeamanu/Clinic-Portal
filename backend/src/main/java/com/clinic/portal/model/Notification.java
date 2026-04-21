@@ -6,12 +6,6 @@ import lombok.*;
 
 /**
  * An in-app notification delivered to a user.
- *
- * relatedEntityId is intentionally generic (a Long ID, not a typed FK).
- * This avoids coupling Notification to a specific entity type —
- * the same table can reference appointments, notes, or anything else
- * without adding nullable FK columns for every possible target.
- * The application layer knows how to resolve the ID given the type.
  */
 @Entity
 @Table(name = "notifications")

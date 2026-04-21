@@ -10,19 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Patient-specific data — extends the base User identity.
- *
- * Kept separate from User so that auth concerns and medical profile concerns
- * don't bleed into each other (SRP). If patient fields change, User is untouched.
- *
- * Relationship to User:
- *   @OneToOne  — one PatientProfile belongs to exactly one User.
- *   @JoinColumn(name = "user_id") — creates a "user_id" FK column in this table.
- *   The profile table owns the relationship (it holds the FK), which is correct
- *   because profiles are the "child" — they depend on User, not the other way around.
- *
- *   fetch = FetchType.LAZY — User is not loaded until explicitly accessed.
- *   Always prefer LAZY for @OneToOne and @ManyToOne to avoid unnecessary joins.
+ * Patient-specific data, extends the base User identity.
  */
 @Entity
 @Table(name = "patient_profiles")
