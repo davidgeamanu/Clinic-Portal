@@ -47,9 +47,8 @@ public class AppointmentServiceImpl implements AppointmentService {
      * Any transition not in this map is rejected by validateTransition().
      */
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> VALID_TRANSITIONS = Map.of(
-            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.RESCHEDULED),
-            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED),
-            AppointmentStatus.RESCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED)
+            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED),
+            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED)
     );
 
     @Override
@@ -121,7 +120,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Only the patient or doctor involved in this appointment may change its status
         Long patientUserId = appointment.getPatient().getUser().getId();
         Long doctorUserId = appointment.getDoctor().getUser().getId();
-        if (!requestingUserId.equals(patientUserId) && !requestingUserId.equals(doctorUserId)) {
+        boolean isDoctor = requestingUserId.equals(doctorUserId);
+        boolean isPatient = requestingUserId.equals(patientUserId);
+
+        if (!isDoctor && !isPatient) {
+            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
+        }
+
+        // CONFIRMED and COMPLETED are doctor-only actions
+        if ((dto.status() == AppointmentStatus.CONFIRMED || dto.status() == AppointmentStatus.COMPLETED) && !isDoctor) {
             throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
@@ -155,7 +162,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         return switch (status) {
             case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
             case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
-            case RESCHEDULED -> NotificationType.APPOINTMENT_RESCHEDULED;
             default -> NotificationType.GENERAL;
         };
     }

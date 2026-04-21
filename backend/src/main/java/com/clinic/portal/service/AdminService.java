@@ -2,6 +2,7 @@ package com.clinic.portal.service;
 
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
+import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
 import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
@@ -18,6 +19,8 @@ public interface AdminService {
     UserResponseDTO setActiveStatus(Long userId, boolean active);
 
     DoctorProfileResponseDTO createDoctor(AdminCreateDoctorDTO dto);
+
+    DoctorProfileResponseDTO updateDoctor(Long profileId, DoctorProfileUpdateDTO dto);
 
     List<SpecializationResponseDTO> getAllSpecializations();
 

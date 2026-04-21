@@ -2,6 +2,7 @@ package com.clinic.portal.service.impl;
 
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
+import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
 import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
@@ -95,6 +96,27 @@ public class AdminServiceImpl implements AdminService {
                 .biography(dto.biography())
                 .specializations(specializations)
                 .build();
+
+        return doctorProfileMapper.toDto(doctorProfileRepository.save(profile));
+    }
+
+    @Override
+    @Transactional
+    public DoctorProfileResponseDTO updateDoctor(Long profileId, DoctorProfileUpdateDTO dto) {
+        DoctorProfile profile = doctorProfileRepository.findById(profileId)
+                .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
+
+        if (dto.biography() != null)
+            profile.setBiography(dto.biography());
+        if (dto.consultationFee() != null)
+            profile.setConsultationFee(dto.consultationFee());
+        if (dto.specializationIds() != null) {
+            List<Specialization> specializations = dto.specializationIds().stream()
+                    .map(id -> specializationRepository.findById(id)
+                            .orElseThrow(() -> new DataNotFoundException(ExceptionCode.SPECIALIZATION_NOT_FOUND)))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            profile.setSpecializations(specializations);
+        }
 
         return doctorProfileMapper.toDto(doctorProfileRepository.save(profile));
     }

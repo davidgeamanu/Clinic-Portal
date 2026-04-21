@@ -2,6 +2,7 @@ package com.clinic.portal.controller.admin;
 
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
+import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
 import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
@@ -46,6 +47,12 @@ public class AdminControllerImpl implements AdminController {
     public DoctorProfileResponseDTO createDoctor(AdminCreateDoctorDTO dto) {
         log.info("[ADMIN] Creating doctor: {}", dto.email());
         return adminService.createDoctor(dto);
+    }
+
+    @Override
+    public DoctorProfileResponseDTO updateDoctor(Long profileId, DoctorProfileUpdateDTO dto) {
+        log.info("[ADMIN] Updating doctor profile: {}", profileId);
+        return adminService.updateDoctor(profileId, dto);
     }
 
     @Override

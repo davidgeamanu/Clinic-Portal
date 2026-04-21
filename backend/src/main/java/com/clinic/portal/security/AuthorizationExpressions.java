@@ -1,5 +1,7 @@
 package com.clinic.portal.security;
 
+import com.clinic.portal.exception.DataNotFoundException;
+import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -27,6 +29,8 @@ public class AuthorizationExpressions {
     public boolean isOwnAppointment(Long appointmentId) {
         if (appointmentId == null)
             return false;
+        if (!appointmentRepository.existsById(appointmentId))
+            throw new DataNotFoundException(ExceptionCode.APPOINTMENT_NOT_FOUND);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication.getPrincipal() instanceof UserDetailsImpl principal))
             return false;

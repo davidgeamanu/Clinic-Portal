@@ -2,6 +2,7 @@ package com.clinic.portal.controller.admin;
 
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
+import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
 import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -71,6 +73,19 @@ public interface AdminController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     DoctorProfileResponseDTO createDoctor(@RequestBody @Valid AdminCreateDoctorDTO dto);
+
+    @PutMapping("/doctors/{profileId}")
+    @Operation(summary = "Update doctor profile", description = "Update biography, consultation fee, and specializations for a doctor. Admin only.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Doctor profile updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = DoctorProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Doctor or specialization not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    DoctorProfileResponseDTO updateDoctor(@PathVariable Long profileId, @RequestBody @Valid DoctorProfileUpdateDTO dto);
 
     @GetMapping("/specializations")
     @Operation(summary = "Get all specializations")
