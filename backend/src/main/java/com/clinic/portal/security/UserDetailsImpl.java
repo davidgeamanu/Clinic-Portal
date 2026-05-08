@@ -20,6 +20,7 @@ public class UserDetailsImpl implements UserDetails {
     private final String password;
     private final Role role;
     private final Long profileId; // PatientProfile or DoctorProfile id; null for ADMIN
+    private final boolean active;
 
     @NonNull
     @Override
@@ -31,5 +32,10 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return active;
     }
 }

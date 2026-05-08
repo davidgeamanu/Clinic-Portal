@@ -30,7 +30,7 @@ public class JpaUserDetailsService implements UserDetailsService {
 
         Long profileId = resolveProfileId(user);
 
-        return new UserDetailsImpl(user.getId(), user.getEmail(), user.getPasswordHash(), user.getRole(), profileId);
+        return new UserDetailsImpl(user.getId(), user.getEmail(), user.getPasswordHash(), user.getRole(), profileId, user.isActive());
     }
 
     private Long resolveProfileId(User user) {

@@ -35,6 +35,7 @@ public class JwtService {
                 .claim("userId", userDetails.getId())
                 .claim("role", userDetails.getRole().name())
                 .claim("profileId", userDetails.getProfileId())
+                .claim("active", userDetails.isActive())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(tokenExpiration)))
                 .signWith(signingKey)
@@ -49,13 +50,15 @@ public class JwtService {
                 .getPayload();
 
         Number profileIdRaw = claims.get("profileId", Number.class);
+        Boolean active = claims.get("active", Boolean.class);
 
         return new UserDetailsImpl(
                 claims.get("userId", Long.class),
                 claims.getSubject(),
                 "",
                 Role.valueOf(claims.get("role", String.class)),
-                profileIdRaw != null ? profileIdRaw.longValue() : null
+                profileIdRaw != null ? profileIdRaw.longValue() : null,
+                active != null ? active : true
         );
     }
 
