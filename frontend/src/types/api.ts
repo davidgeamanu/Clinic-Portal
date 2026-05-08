@@ -1,17 +1,16 @@
-// ─── Enums ────────────────────────────────────────────────────────────────────
+// Enums
 
 export type Role = "ADMIN" | "DOCTOR" | "PATIENT";
 
 export type AppointmentStatus =
-  | "SCHEDULED"
-  | "CONFIRMED"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "RESCHEDULED";
+    | "SCHEDULED"
+    | "CONFIRMED"
+    | "COMPLETED"
+    | "CANCELLED";
 
 export type AppointmentMode = "IN_PERSON" | "VIDEO";
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+//  Auth
 
 export interface AuthResponse {
   role: Role;
@@ -32,7 +31,7 @@ export interface RegisterRequest {
   phoneNumber: string;
 }
 
-// ─── User ─────────────────────────────────────────────────────────────────────
+// User
 
 export interface UserResponse {
   id: number;
@@ -44,7 +43,7 @@ export interface UserResponse {
   active: boolean;
 }
 
-// ─── Specialization ───────────────────────────────────────────────────────────
+// Specialization
 
 export interface SpecializationResponse {
   id: number;
@@ -57,7 +56,7 @@ export interface SpecializationRequest {
   description?: string;
 }
 
-// ─── Doctor ───────────────────────────────────────────────────────────────────
+// Doctor
 
 export interface DoctorProfileResponse {
   id: number;
@@ -87,7 +86,7 @@ export interface AdminCreateDoctorRequest {
   specializationIds?: number[];
 }
 
-// ─── Appointment ──────────────────────────────────────────────────────────────
+// Appointment
 
 export interface AppointmentResponse {
   id: number;
@@ -106,7 +105,7 @@ export interface AppointmentResponse {
   createdAt: string;
 }
 
-// ─── Room ─────────────────────────────────────────────────────────────────────
+// Room
 
 export type RoomType = "CONSULT" | "OR" | "IMAGING";
 export type RoomStatus = "FREE" | "OCCUPIED";
@@ -129,7 +128,7 @@ export interface RoomUpdateRequest {
   status: RoomStatus;
 }
 
-// ─── Admin Patient ────────────────────────────────────────────────────────────
+// Admin Patient
 
 export interface AdminPatient {
   patientProfileId: number;
@@ -147,7 +146,7 @@ export interface AdminPatient {
   emergencyContactPhone: string | null;
 }
 
-// ─── Admin Department ─────────────────────────────────────────────────────────
+// Admin Department
 
 export interface AdminDepartment {
   id: number;
@@ -159,7 +158,7 @@ export interface AdminDepartment {
   imagingRoomCount: number;
 }
 
-// ─── Admin Dashboard ──────────────────────────────────────────────────────────
+// Admin Dashboard
 
 export interface DailyStats {
   day: string;
@@ -182,7 +181,7 @@ export interface AdminDashboard {
   departmentLoad: DepartmentLoad[];
 }
 
-// ─── Admin Analytics ──────────────────────────────────────────────────────────
+// Admin Analytics
 
 export interface MonthlyRevenue {
   month: string;
@@ -201,7 +200,7 @@ export interface AdminAnalytics {
   patientTrend: MonthlyPatientCount[];
 }
 
-// ─── API Error (mirrors ExceptionBody) ────────────────────────────────────────
+// API Error (mirrors ExceptionBody)
 
 export interface ApiError {
   timestamp: string;

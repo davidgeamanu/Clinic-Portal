@@ -22,7 +22,6 @@ const APPOINTMENT_STATUS_STYLES: Record<AppointmentStatus, string> = {
     CONFIRMED:   "bg-success/10 text-success border-success/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
-    RESCHEDULED: "bg-info/10 text-info border-info/20",
 };
 
 function formatDate(iso: string) {
@@ -39,7 +38,7 @@ function formatTimeRange(iso: string, durationMinutes: number) {
     return `${fmt(start)} – ${fmt(end)}`;
 }
 
-//Doctor Details Panel
+//  Doctor Details Panel
 
 function DoctorDetails({ doctor, onToggleStatus }: { doctor: DoctorProfileResponse; onToggleStatus: () => void }) {
     const navigate = useNavigate();
@@ -47,7 +46,7 @@ function DoctorDetails({ doctor, onToggleStatus }: { doctor: DoctorProfileRespon
     const [deptPickerOpen, setDeptPickerOpen] = useState(false);
 
     const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED");
-    const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "RESCHEDULED");
+    const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED");
 
     const navigateToDept = (deptName: string) =>
         navigate(`/admin/building?dept=${encodeURIComponent(deptName)}`);
@@ -321,51 +320,51 @@ export default function AdminDoctors() {
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                            {["Doctor", "Department", "Room", "Phone", "Rating", "Actions"].map((h) => (
-                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
-                            ))}
-                        </tr>
+                    <tr className="border-b border-border bg-muted/50">
+                        {["Doctor", "Department", "Room", "Phone", "Rating", "Actions"].map((h) => (
+                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                        ))}
+                    </tr>
                     </thead>
                     <tbody>
-                        {isLoading ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading doctors...</td></tr>
-                        ) : filtered.length === 0 ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No doctors found.</td></tr>
-                        ) : (
-                            filtered.map((doc) => (
-                                <tr key={doc.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                                                {doc.firstName[0]}{doc.lastName[0]}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{doc.firstName} {doc.lastName}</p>
-                                                <p className="text-xs text-muted-foreground">{doc.email}</p>
-                                            </div>
+                    {isLoading ? (
+                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading doctors...</td></tr>
+                    ) : filtered.length === 0 ? (
+                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No doctors found.</td></tr>
+                    ) : (
+                        filtered.map((doc) => (
+                            <tr key={doc.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                                            {doc.firstName[0]}{doc.lastName[0]}
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-foreground">
-                                        {doc.specializations.length > 0
-                                            ? doc.specializations.map((s) => s.name).join(", ")
-                                            : <span className="text-muted-foreground">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-foreground">
-                                        {doc.roomNumber ?? <span className="text-muted-foreground">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {doc.phoneNumber ?? <span>—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-foreground">
-                                        {doc.rating != null ? `⭐ ${doc.rating}` : <span className="text-muted-foreground">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Button variant="ghost" size="sm" onClick={() => setSelected(doc)}>Details</Button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">{doc.firstName} {doc.lastName}</p>
+                                            <p className="text-xs text-muted-foreground">{doc.email}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                    {doc.specializations.length > 0
+                                        ? doc.specializations.map((s) => s.name).join(", ")
+                                        : <span className="text-muted-foreground">—</span>}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                    {doc.roomNumber ?? <span className="text-muted-foreground">—</span>}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                    {doc.phoneNumber ?? <span>—</span>}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                    {doc.rating != null ? `⭐ ${doc.rating}` : <span className="text-muted-foreground">—</span>}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <Button variant="ghost" size="sm" onClick={() => setSelected(doc)}>Details</Button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
                     </tbody>
                 </table>
             </div>

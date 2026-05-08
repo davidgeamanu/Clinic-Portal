@@ -15,7 +15,6 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
     CONFIRMED:   "bg-success/10 text-success border-success/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
-    RESCHEDULED: "bg-info/10 text-info border-info/20",
 };
 
 function calcAge(dob: string | null): string {
@@ -60,7 +59,7 @@ function PatientDetails({ patient, onToggleStatus }: { patient: AdminPatient; on
     const { data: appointments = [], isLoading } = usePatientAppointments(patient.patientProfileId);
 
     const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED");
-    const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "RESCHEDULED");
+    const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED");
 
     return (
         <div className="space-y-5">
@@ -75,7 +74,7 @@ function PatientDetails({ patient, onToggleStatus }: { patient: AdminPatient; on
                 )}
                 {patient.emergencyContactName && (
                     <InfoRow icon={AlertCircle} label="Emergency"
-                        value={`${patient.emergencyContactName}${patient.emergencyContactPhone ? ` · ${patient.emergencyContactPhone}` : ""}`}
+                             value={`${patient.emergencyContactName}${patient.emergencyContactPhone ? ` · ${patient.emergencyContactPhone}` : ""}`}
                     />
                 )}
             </div>
@@ -171,45 +170,45 @@ export default function AdminPatients() {
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                            {["Patient", "Age", "Gender", "Phone", "Status", "Actions"].map((h) => (
-                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
-                            ))}
-                        </tr>
+                    <tr className="border-b border-border bg-muted/50">
+                        {["Patient", "Age", "Gender", "Phone", "Status", "Actions"].map((h) => (
+                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                        ))}
+                    </tr>
                     </thead>
                     <tbody>
-                        {isLoading ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading patients...</td></tr>
-                        ) : filtered.length === 0 ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No patients found.</td></tr>
-                        ) : (
-                            filtered.map((p) => (
-                                <tr key={p.patientProfileId} className="border-b border-border hover:bg-muted/30 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                                                {p.firstName[0]}{p.lastName[0]}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{p.firstName} {p.lastName}</p>
-                                                <p className="text-xs text-muted-foreground">{p.email}</p>
-                                            </div>
+                    {isLoading ? (
+                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading patients...</td></tr>
+                    ) : filtered.length === 0 ? (
+                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No patients found.</td></tr>
+                    ) : (
+                        filtered.map((p) => (
+                            <tr key={p.patientProfileId} className="border-b border-border hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                                            {p.firstName[0]}{p.lastName[0]}
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-foreground">{calcAge(p.dateOfBirth)}</td>
-                                    <td className="px-4 py-3 text-sm text-foreground">{formatGender(p.gender)}</td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">{p.phoneNumber ?? "—"}</td>
-                                    <td className="px-4 py-3">
-                                        <Badge variant="outline" className={p.active ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}>
-                                            {p.active ? "Active" : "Inactive"}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Button variant="ghost" size="sm" onClick={() => setSelected(p)}>Details</Button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">{p.firstName} {p.lastName}</p>
+                                            <p className="text-xs text-muted-foreground">{p.email}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">{calcAge(p.dateOfBirth)}</td>
+                                <td className="px-4 py-3 text-sm text-foreground">{formatGender(p.gender)}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{p.phoneNumber ?? "—"}</td>
+                                <td className="px-4 py-3">
+                                    <Badge variant="outline" className={p.active ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}>
+                                        {p.active ? "Active" : "Inactive"}
+                                    </Badge>
+                                </td>
+                                <td className="px-4 py-3">
+                                    <Button variant="ghost" size="sm" onClick={() => setSelected(p)}>Details</Button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
                     </tbody>
                 </table>
             </div>

@@ -14,7 +14,6 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
     CONFIRMED:    "bg-success/10 text-success border-success/20",
     COMPLETED:    "bg-muted text-muted-foreground border-border",
     CANCELLED:    "bg-muted text-muted-foreground border-border",
-    RESCHEDULED:  "bg-info/10 text-info border-info/20",
 };
 
 const MODE_STYLES: Record<AppointmentMode, string> = {
@@ -39,7 +38,6 @@ const STATUS_OPTIONS: Array<{ label: string; value: AppointmentStatus | "all" }>
     { label: "Confirmed",    value: "CONFIRMED" },
     { label: "Completed",    value: "COMPLETED" },
     { label: "Cancelled",    value: "CANCELLED" },
-    { label: "Rescheduled",  value: "RESCHEDULED" },
 ];
 
 const MODE_OPTIONS: Array<{ label: string; value: AppointmentMode | "all" }> = [
@@ -120,66 +118,66 @@ export default function AdminAppointments() {
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                            {["Patient", "Doctor", "Date & Time", "Duration", "Mode", "Room", "Status", "Actions"].map((h) => (
-                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
+                    <tr className="border-b border-border bg-muted/50">
+                        {["Patient", "Doctor", "Date & Time", "Duration", "Mode", "Room", "Status", "Actions"].map((h) => (
+                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {h}
+                            </th>
+                        ))}
+                    </tr>
                     </thead>
                     <tbody>
-                        {isLoading ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                    Loading appointments...
+                    {isLoading ? (
+                        <tr>
+                            <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                Loading appointments...
+                            </td>
+                        </tr>
+                    ) : filtered.length === 0 ? (
+                        <tr>
+                            <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                No appointments found.
+                            </td>
+                        </tr>
+                    ) : (
+                        filtered.map((a) => (
+                            <tr key={a.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-3 text-sm font-medium text-foreground">{a.patientName}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{a.doctorName}</td>
+                                <td className="px-4 py-3 text-sm text-foreground">
+                                    {formatDate(a.scheduledAt)}
+                                    <br />
+                                    <span className="text-xs text-muted-foreground">{formatTimeRange(a.scheduledAt, a.durationMinutes)}</span>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">{a.durationMinutes} min</td>
+                                <td className="px-4 py-3">
+                                    <Badge variant="outline" className={MODE_STYLES[a.mode]}>
+                                        {MODE_LABELS[a.mode]}
+                                    </Badge>
+                                </td>
+                                <td className="px-4 py-3 text-sm">
+                                    {a.roomNumber ? (
+                                        <div>
+                                            <p className="font-medium text-foreground">{a.roomNumber}</p>
+                                            <p className="text-xs text-muted-foreground">{a.roomDepartment ?? "—"}</p>
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground">—</span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <Badge variant="outline" className={STATUS_STYLES[a.status]}>
+                                        {a.status.charAt(0) + a.status.slice(1).toLowerCase()}
+                                    </Badge>
+                                </td>
+                                <td className="px-4 py-3">
+                                    <Button variant="ghost" size="sm" onClick={() => setSelected(a)}>
+                                        Details
+                                    </Button>
                                 </td>
                             </tr>
-                        ) : filtered.length === 0 ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                    No appointments found.
-                                </td>
-                            </tr>
-                        ) : (
-                            filtered.map((a) => (
-                                    <tr key={a.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-foreground">{a.patientName}</td>
-                                        <td className="px-4 py-3 text-sm text-muted-foreground">{a.doctorName}</td>
-                                        <td className="px-4 py-3 text-sm text-foreground">
-                                            {formatDate(a.scheduledAt)}
-                                            <br />
-                                            <span className="text-xs text-muted-foreground">{formatTimeRange(a.scheduledAt, a.durationMinutes)}</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-foreground">{a.durationMinutes} min</td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className={MODE_STYLES[a.mode]}>
-                                                {MODE_LABELS[a.mode]}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm">
-                                            {a.roomNumber ? (
-                                                <div>
-                                                    <p className="font-medium text-foreground">{a.roomNumber}</p>
-                                                    <p className="text-xs text-muted-foreground">{a.roomDepartment ?? "—"}</p>
-                                                </div>
-                                            ) : (
-                                                <span className="text-muted-foreground">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className={STATUS_STYLES[a.status]}>
-                                                {a.status.charAt(0) + a.status.slice(1).toLowerCase()}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Button variant="ghost" size="sm" onClick={() => setSelected(a)}>
-                                                Details
-                                            </Button>
-                                        </td>
-                                    </tr>
-                            ))
-                        )}
+                        ))
+                    )}
                     </tbody>
                 </table>
             </div>
@@ -190,46 +188,46 @@ export default function AdminAppointments() {
                         <DialogTitle>Appointment #{selected?.id}</DialogTitle>
                     </DialogHeader>
                     {selected && (
-                            <div className="grid gap-3 text-sm">
-                                <InfoRow icon={User}     label="Patient"  value={selected.patientName} />
-                                <InfoRow icon={User}     label="Doctor"   value={selected.doctorName} />
-                                <InfoRow icon={Calendar} label="Date"     value={formatDate(selected.scheduledAt)} />
-                                <InfoRow icon={Clock}    label="Time"     value={formatTimeRange(selected.scheduledAt, selected.durationMinutes)} />
-                                <InfoRow icon={Calendar} label="Mode"     value={MODE_LABELS[selected.mode]} />
-                                {selected.roomNumber && (
-                                    <>
-                                        <div className="border-t border-border pt-3 mt-1" />
-                                        <InfoRow icon={DoorClosed} label="Room"       value={selected.roomNumber} />
-                                        {selected.roomType && (
-                                            <InfoRow icon={MapPin} label="Room Type"  value={ROOM_TYPE_LABELS[selected.roomType]} />
-                                        )}
-                                        {selected.roomDepartment && (
-                                            <InfoRow icon={MapPin} label="Department" value={selected.roomDepartment} />
-                                        )}
-                                    </>
-                                )}
-                                {selected.reason && (
-                                    <p className="pt-2 text-muted-foreground">
-                                        <strong>Reason:</strong> {selected.reason}
-                                    </p>
-                                )}
-                                {canCancel(selected.status) && (
-                                    <div className="pt-2">
-                                        <Button
-                                            variant="destructive"
-                                            className="w-full"
-                                            disabled={cancelAppointment.isPending}
-                                            onClick={() =>
-                                                cancelAppointment.mutate(selected.id, {
-                                                    onSuccess: () => setSelected(null),
-                                                })
-                                            }
-                                        >
-                                            Cancel Appointment
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="grid gap-3 text-sm">
+                            <InfoRow icon={User}     label="Patient"  value={selected.patientName} />
+                            <InfoRow icon={User}     label="Doctor"   value={selected.doctorName} />
+                            <InfoRow icon={Calendar} label="Date"     value={formatDate(selected.scheduledAt)} />
+                            <InfoRow icon={Clock}    label="Time"     value={formatTimeRange(selected.scheduledAt, selected.durationMinutes)} />
+                            <InfoRow icon={Calendar} label="Mode"     value={MODE_LABELS[selected.mode]} />
+                            {selected.roomNumber && (
+                                <>
+                                    <div className="border-t border-border pt-3 mt-1" />
+                                    <InfoRow icon={DoorClosed} label="Room"       value={selected.roomNumber} />
+                                    {selected.roomType && (
+                                        <InfoRow icon={MapPin} label="Room Type"  value={ROOM_TYPE_LABELS[selected.roomType]} />
+                                    )}
+                                    {selected.roomDepartment && (
+                                        <InfoRow icon={MapPin} label="Department" value={selected.roomDepartment} />
+                                    )}
+                                </>
+                            )}
+                            {selected.reason && (
+                                <p className="pt-2 text-muted-foreground">
+                                    <strong>Reason:</strong> {selected.reason}
+                                </p>
+                            )}
+                            {canCancel(selected.status) && (
+                                <div className="pt-2">
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full"
+                                        disabled={cancelAppointment.isPending}
+                                        onClick={() =>
+                                            cancelAppointment.mutate(selected.id, {
+                                                onSuccess: () => setSelected(null),
+                                            })
+                                        }
+                                    >
+                                        Cancel Appointment
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>

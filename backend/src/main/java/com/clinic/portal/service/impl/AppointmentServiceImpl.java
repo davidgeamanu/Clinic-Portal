@@ -51,9 +51,8 @@ public class AppointmentServiceImpl implements AppointmentService {
      * Any transition not in this map is rejected by validateTransition().
      */
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> VALID_TRANSITIONS = Map.of(
-            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.RESCHEDULED),
-            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED),
-            AppointmentStatus.RESCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED)
+            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED),
+            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED)
     );
 
     @Override
@@ -172,7 +171,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         return switch (status) {
             case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
             case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
-            case RESCHEDULED -> NotificationType.APPOINTMENT_RESCHEDULED;
             default -> NotificationType.GENERAL;
         };
     }
