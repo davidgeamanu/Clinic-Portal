@@ -1,5 +1,6 @@
 package com.clinic.portal.dto.appointment;
 
+import com.clinic.portal.model.enums.AppointmentMode;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +18,8 @@ public record AppointmentRequestDTO(
 
         @Min(value = 15, message = "Minimum consultation duration is 15 minutes")
         int durationMinutes,
+
+        AppointmentMode mode,
 
         String reason
 

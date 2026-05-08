@@ -51,6 +51,8 @@ public class DoctorServiceImpl implements DoctorService {
             profile.setBiography(dto.biography());
         if (dto.consultationFee() != null)
             profile.setConsultationFee(dto.consultationFee());
+        if (dto.rating() != null)
+            profile.setRating(dto.rating());
 
         // Replace specialization list if provided sending an empty list clears them all
         if (dto.specializationIds() != null) {

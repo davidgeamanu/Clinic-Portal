@@ -38,6 +38,10 @@ public enum ExceptionCode {
     INVALID_FILE_TYPE("File type not allowed. Accepted: PDF, images, Word documents.", "ERR_7004"),
     FILE_STORAGE_ERROR("Failed to store the uploaded file.", "ERR_7005"),
 
+    // Room
+    ROOM_NOT_FOUND("Room not found.", "ERR_7006"),
+    ROOM_NOT_CONSULT_TYPE("Only consult rooms can be assigned to doctors.", "ERR_7007"),
+
     // Notification
     NOTIFICATION_NOT_FOUND("Notification not found.", "ERR_8001"),
 

@@ -1,6 +1,7 @@
 package com.clinic.portal.repository;
 
 import com.clinic.portal.model.DoctorProfile;
+import com.clinic.portal.model.Room;
 import com.clinic.portal.model.Specialization;
 import com.clinic.portal.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,6 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Lo
 
     // Admin: check license uniqueness before creating a doctor profile
     boolean existsByLicenseNumber(String licenseNumber);
+
+    Optional<DoctorProfile> findByRoom(Room room);
 }

@@ -1,9 +1,15 @@
 package com.clinic.portal.controller.admin;
 
+import com.clinic.portal.dto.admin.AdminAnalyticsDTO;
+import com.clinic.portal.dto.admin.AdminDashboardDTO;
+import com.clinic.portal.dto.admin.AdminDepartmentDTO;
+import com.clinic.portal.dto.admin.AdminPatientDTO;
+import com.clinic.portal.dto.admin.DoctorRoomAssignmentDTO;
+import com.clinic.portal.dto.admin.RoomResponseDTO;
+import com.clinic.portal.dto.admin.RoomUpdateDTO;
+import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
-import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
-import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
 import com.clinic.portal.model.enums.Role;
@@ -26,6 +32,54 @@ public class AdminControllerImpl implements AdminController {
     private final AdminService adminService;
 
     @Override
+    public AdminDashboardDTO getAdminDashboard() {
+        log.info("[ADMIN] Getting dashboard stats");
+        return adminService.getAdminDashboard();
+    }
+
+    @Override
+    public AdminAnalyticsDTO getAnalytics() {
+        log.info("[ADMIN] Getting analytics data");
+        return adminService.getAnalytics();
+    }
+
+    @Override
+    public List<AdminDepartmentDTO> getDepartments() {
+        log.info("[ADMIN] Getting departments");
+        return adminService.getDepartments();
+    }
+
+    @Override
+    public List<RoomResponseDTO> getRooms() {
+        log.info("[ADMIN] Getting all rooms");
+        return adminService.getRooms();
+    }
+
+    @Override
+    public RoomResponseDTO updateRoom(Long roomId, RoomUpdateDTO dto) {
+        log.info("[ADMIN] Updating room: {}", roomId);
+        return adminService.updateRoom(roomId, dto);
+    }
+
+    @Override
+    public List<AdminPatientDTO> getAdminPatients() {
+        log.info("[ADMIN] Getting all patients");
+        return adminService.getAdminPatients();
+    }
+
+    @Override
+    public List<AppointmentResponseDTO> getPatientAppointments(Long patientProfileId) {
+        log.info("[ADMIN] Getting appointments for patient profile: {}", patientProfileId);
+        return adminService.getPatientAppointments(patientProfileId);
+    }
+
+    @Override
+    public List<AppointmentResponseDTO> getDoctorAppointments(Long doctorProfileId) {
+        log.info("[ADMIN] Getting appointments for doctor profile: {}", doctorProfileId);
+        return adminService.getDoctorAppointments(doctorProfileId);
+    }
+
+    @Override
     public List<UserResponseDTO> getAllUsers() {
         log.info("[ADMIN] Getting all users");
         return adminService.getAllUsers();
@@ -44,15 +98,15 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
-    public DoctorProfileResponseDTO createDoctor(AdminCreateDoctorDTO dto) {
-        log.info("[ADMIN] Creating doctor: {}", dto.email());
-        return adminService.createDoctor(dto);
+    public DoctorProfileResponseDTO assignDoctorRoom(Long doctorProfileId, DoctorRoomAssignmentDTO dto) {
+        log.info("[ADMIN] Assigning room {} to doctor profile: {}", dto.roomId(), doctorProfileId);
+        return adminService.assignDoctorRoom(doctorProfileId, dto);
     }
 
     @Override
-    public DoctorProfileResponseDTO updateDoctor(Long profileId, DoctorProfileUpdateDTO dto) {
-        log.info("[ADMIN] Updating doctor profile: {}", profileId);
-        return adminService.updateDoctor(profileId, dto);
+    public DoctorProfileResponseDTO createDoctor(AdminCreateDoctorDTO dto) {
+        log.info("[ADMIN] Creating doctor: {}", dto.email());
+        return adminService.createDoctor(dto);
     }
 
     @Override
@@ -62,14 +116,14 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
-    public SpecializationResponseDTO createSpecialization(SpecializationRequestDTO dto) {
-        log.info("[ADMIN] Creating specialization: {}", dto.name());
-        return adminService.createSpecialization(dto);
+    public List<AppointmentResponseDTO> getAllAppointments() {
+        log.info("[ADMIN] Getting all appointments");
+        return adminService.getAllAppointments();
     }
 
     @Override
-    public void deleteSpecialization(Long id) {
-        log.info("[ADMIN] Deleting specialization: {}", id);
-        adminService.deleteSpecialization(id);
+    public AppointmentResponseDTO cancelAppointment(Long appointmentId) {
+        log.info("[ADMIN] Cancelling appointment: {}", appointmentId);
+        return adminService.cancelAppointment(appointmentId);
     }
 }

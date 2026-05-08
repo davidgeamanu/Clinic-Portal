@@ -1,9 +1,15 @@
 package com.clinic.portal.controller.admin;
 
+import com.clinic.portal.dto.admin.AdminAnalyticsDTO;
+import com.clinic.portal.dto.admin.AdminDashboardDTO;
+import com.clinic.portal.dto.admin.AdminDepartmentDTO;
+import com.clinic.portal.dto.admin.AdminPatientDTO;
+import com.clinic.portal.dto.admin.DoctorRoomAssignmentDTO;
+import com.clinic.portal.dto.admin.RoomResponseDTO;
+import com.clinic.portal.dto.admin.RoomUpdateDTO;
+import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
-import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
-import com.clinic.portal.dto.specialization.SpecializationRequestDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
 import com.clinic.portal.exception.ExceptionBody;
@@ -17,20 +23,97 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
-@Tag(name = "Admin", description = "Administrative operations — user management, doctor creation, specializations")
+@Tag(name = "Admin", description = "Administrative operations")
 public interface AdminController {
+
+    @GetMapping("/dashboard")
+    @Operation(summary = "Get dashboard stats")
+    @ApiResponse(responseCode = "200", description = "Dashboard data retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AdminDashboardDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    AdminDashboardDTO getAdminDashboard();
+
+    @GetMapping("/analytics")
+    @Operation(summary = "Get analytics data")
+    @ApiResponse(responseCode = "200", description = "Analytics data retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AdminAnalyticsDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    AdminAnalyticsDTO getAnalytics();
+
+    @GetMapping("/departments")
+    @Operation(summary = "Get all departments with stats")
+    @ApiResponse(responseCode = "200", description = "Departments retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AdminDepartmentDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<AdminDepartmentDTO> getDepartments();
+
+    @GetMapping("/rooms")
+    @Operation(summary = "Get all rooms")
+    @ApiResponse(responseCode = "200", description = "Rooms retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = RoomResponseDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<RoomResponseDTO> getRooms();
+
+    @PatchMapping("/rooms/{roomId}")
+    @Operation(summary = "Update room assignment, type, or status")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Room updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = RoomResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Room not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    RoomResponseDTO updateRoom(@PathVariable Long roomId, @RequestBody @Valid RoomUpdateDTO dto);
+
+    @GetMapping("/patients")
+    @Operation(summary = "Get all patients with profile data")
+    @ApiResponse(responseCode = "200", description = "Patients retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AdminPatientDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<AdminPatientDTO> getAdminPatients();
+
+    @GetMapping("/patients/{patientProfileId}/appointments")
+    @Operation(summary = "Get appointments for a specific patient")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Appointments retrieved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AppointmentResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Patient not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    List<AppointmentResponseDTO> getPatientAppointments(@PathVariable Long patientProfileId);
+
+    @GetMapping("/doctors/{doctorProfileId}/appointments")
+    @Operation(summary = "Get appointments for a specific doctor")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Appointments retrieved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AppointmentResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Doctor not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    List<AppointmentResponseDTO> getDoctorAppointments(@PathVariable Long doctorProfileId);
 
     @GetMapping("/users")
     @Operation(summary = "Get all users")
@@ -49,7 +132,7 @@ public interface AdminController {
     List<UserResponseDTO> getUsersByRole(@PathVariable Role role);
 
     @PatchMapping("/users/{userId}/status")
-    @Operation(summary = "Set user active status", description = "Activate or deactivate a user account.")
+    @Operation(summary = "Set user active status")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status updated",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -61,8 +144,24 @@ public interface AdminController {
     @ResponseStatus(HttpStatus.OK)
     UserResponseDTO setActiveStatus(@PathVariable Long userId, @RequestParam boolean active);
 
+    @PatchMapping("/doctors/{doctorProfileId}/room")
+    @Operation(summary = "Assign or unassign a consult room for a doctor")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Room assignment updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = DoctorProfileResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Room is not a consult type or already assigned",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class))),
+            @ApiResponse(responseCode = "404", description = "Doctor or room not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    DoctorProfileResponseDTO assignDoctorRoom(@PathVariable Long doctorProfileId, @RequestBody DoctorRoomAssignmentDTO dto);
+
     @PostMapping("/doctors")
-    @Operation(summary = "Create doctor account", description = "Create a new doctor user with a profile. Admin only.")
+    @Operation(summary = "Create doctor account")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Doctor created",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -74,19 +173,6 @@ public interface AdminController {
     @ResponseStatus(HttpStatus.CREATED)
     DoctorProfileResponseDTO createDoctor(@RequestBody @Valid AdminCreateDoctorDTO dto);
 
-    @PutMapping("/doctors/{profileId}")
-    @Operation(summary = "Update doctor profile", description = "Update biography, consultation fee, and specializations for a doctor. Admin only.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Doctor profile updated",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = DoctorProfileResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Doctor or specialization not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ExceptionBody.class)))
-    })
-    @ResponseStatus(HttpStatus.OK)
-    DoctorProfileResponseDTO updateDoctor(@PathVariable Long profileId, @RequestBody @Valid DoctorProfileUpdateDTO dto);
-
     @GetMapping("/specializations")
     @Operation(summary = "Get all specializations")
     @ApiResponse(responseCode = "200", description = "Specializations retrieved",
@@ -95,27 +181,27 @@ public interface AdminController {
     @ResponseStatus(HttpStatus.OK)
     List<SpecializationResponseDTO> getAllSpecializations();
 
-    @PostMapping("/specializations")
-    @Operation(summary = "Create specialization")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Specialization created",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = SpecializationResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Specialization already exists",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ExceptionBody.class)))
-    })
-    @ResponseStatus(HttpStatus.CREATED)
-    SpecializationResponseDTO createSpecialization(@RequestBody @Valid SpecializationRequestDTO dto);
+    @GetMapping("/appointments")
+    @Operation(summary = "Get all appointments")
+    @ApiResponse(responseCode = "200", description = "Appointments retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AppointmentResponseDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<AppointmentResponseDTO> getAllAppointments();
 
-    @DeleteMapping("/specializations/{id}")
-    @Operation(summary = "Delete specialization")
+    @PatchMapping("/appointments/{appointmentId}/cancel")
+    @Operation(summary = "Cancel appointment")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Specialization deleted"),
-            @ApiResponse(responseCode = "404", description = "Specialization not found",
+            @ApiResponse(responseCode = "200", description = "Appointment cancelled",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AppointmentResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Appointment already completed or cancelled",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class))),
+            @ApiResponse(responseCode = "404", description = "Appointment not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ExceptionBody.class)))
     })
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    void deleteSpecialization(@PathVariable Long id);
+    @ResponseStatus(HttpStatus.OK)
+    AppointmentResponseDTO cancelAppointment(@PathVariable Long appointmentId);
 }

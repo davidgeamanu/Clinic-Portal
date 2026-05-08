@@ -13,7 +13,10 @@ import com.clinic.portal.model.Appointment;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.PatientProfile;
 import com.clinic.portal.model.User;
+import com.clinic.portal.model.enums.AppointmentMode;
 import com.clinic.portal.model.enums.AppointmentStatus;
+import com.clinic.portal.model.enums.RoomStatus;
+import com.clinic.portal.repository.RoomRepository;
 import com.clinic.portal.model.enums.NotificationType;
 import com.clinic.portal.repository.AppointmentRepository;
 import com.clinic.portal.repository.DoctorProfileRepository;
@@ -39,6 +42,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientProfileRepository patientProfileRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final UserRepository userRepository;
+    private final RoomRepository roomRepository;
     private final NotificationService notificationService;
     private final AppointmentMapper appointmentMapper;
 
@@ -47,8 +51,9 @@ public class AppointmentServiceImpl implements AppointmentService {
      * Any transition not in this map is rejected by validateTransition().
      */
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> VALID_TRANSITIONS = Map.of(
-            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED),
-            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED)
+            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.RESCHEDULED),
+            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED),
+            AppointmentStatus.RESCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED)
     );
 
     @Override
@@ -73,6 +78,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .doctor(doctor)
                 .scheduledAt(dto.scheduledAt())
                 .durationMinutes(dto.durationMinutes())
+                .mode(dto.mode() != null ? dto.mode() : AppointmentMode.IN_PERSON)
                 .reason(dto.reason())
                 .build();
 
@@ -120,21 +126,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Only the patient or doctor involved in this appointment may change its status
         Long patientUserId = appointment.getPatient().getUser().getId();
         Long doctorUserId = appointment.getDoctor().getUser().getId();
-        boolean isDoctor = requestingUserId.equals(doctorUserId);
-        boolean isPatient = requestingUserId.equals(patientUserId);
-
-        if (!isDoctor && !isPatient) {
-            throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
-        }
-
-        // CONFIRMED and COMPLETED are doctor-only actions
-        if ((dto.status() == AppointmentStatus.CONFIRMED || dto.status() == AppointmentStatus.COMPLETED) && !isDoctor) {
+        if (!requestingUserId.equals(patientUserId) && !requestingUserId.equals(doctorUserId)) {
             throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
         validateTransition(appointment.getStatus(), dto.status());
         appointment.setStatus(dto.status());
         Appointment saved = appointmentRepository.save(appointment);
+
+        updateRoomStatus(saved);
 
         // Notify the other party about the status change
         User patientUser = appointment.getPatient().getUser();
@@ -151,6 +151,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentMapper.toDto(saved);
     }
 
+    private void updateRoomStatus(Appointment appointment) {
+        if (appointment.getMode() != AppointmentMode.IN_PERSON) return;
+        var room = appointment.getDoctor().getRoom();
+        if (room == null) return;
+        room.setStatus(appointment.getStatus() == AppointmentStatus.CONFIRMED
+                ? RoomStatus.OCCUPIED
+                : RoomStatus.FREE);
+        roomRepository.save(room);
+    }
+
     private void validateTransition(AppointmentStatus current, AppointmentStatus next) {
         Set<AppointmentStatus> allowed = VALID_TRANSITIONS.get(current);
         if (allowed == null || !allowed.contains(next)) {
@@ -162,6 +172,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         return switch (status) {
             case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
             case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
+            case RESCHEDULED -> NotificationType.APPOINTMENT_RESCHEDULED;
             default -> NotificationType.GENERAL;
         };
     }

@@ -29,6 +29,9 @@ public class DoctorProfile extends BaseEntity {
     @Column(precision = 10, scale = 2)
     private BigDecimal consultationFee;
 
+    @Column(precision = 3, scale = 1)
+    private BigDecimal rating;
+
     /**
      * Doctor <-> Specialization: many-to-many.
      */
@@ -40,6 +43,10 @@ public class DoctorProfile extends BaseEntity {
     )
     @Builder.Default
     private List<Specialization> specializations = new ArrayList<>();
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private Room room;
 
     @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @Builder.Default

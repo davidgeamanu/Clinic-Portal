@@ -32,9 +32,13 @@ public class DoctorProfileMapper {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getPhoneNumber(),
+                user.isActive(),
                 profile.getLicenseNumber(),
                 profile.getBiography(),
                 profile.getConsultationFee(),
+                profile.getRating(),
+                profile.getRoom() != null ? profile.getRoom().getId() : null,
+                profile.getRoom() != null ? profile.getRoom().getRoomNumber() : null,
                 specializations
         );
     }

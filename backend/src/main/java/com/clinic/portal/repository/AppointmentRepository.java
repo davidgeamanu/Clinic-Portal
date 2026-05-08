@@ -15,20 +15,14 @@ import java.util.List;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    // Patient dashboard: all appointments for a patient, newest first
     List<Appointment> findByPatientOrderByScheduledAtDesc(PatientProfile patient);
 
-    // Patient dashboard: filter by status (e.g. show only upcoming SCHEDULED ones)
     List<Appointment> findByPatientAndStatus(PatientProfile patient, AppointmentStatus status);
 
-    // Doctor dashboard: today's and upcoming schedule
     List<Appointment> findByDoctorOrderByScheduledAtAsc(DoctorProfile doctor);
 
-    // Doctor dashboard: filter by status (e.g. only CONFIRMED appointments)
     List<Appointment> findByDoctorAndStatus(DoctorProfile doctor, AppointmentStatus status);
 
-    // Conflict check: does the doctor already have an active booking in this time window?
-    // Excludes CANCELLED appointments so cancelled slots can be rebooked.
     boolean existsByDoctorAndScheduledAtBetweenAndStatusNot(
             DoctorProfile doctor,
             LocalDateTime from,
@@ -36,7 +30,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             AppointmentStatus status
     );
 
-    // Authorization check: does this appointment belong to the given patient or doctor profile?
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.id = :id AND (a.patient.id = :profileId OR a.doctor.id = :profileId)")
     long countByIdAndProfileId(@Param("id") Long id, @Param("profileId") Long profileId);
+
+    long countByScheduledAtBetween(LocalDateTime from, LocalDateTime to);
+
+    List<Appointment> findByScheduledAtBetween(LocalDateTime from, LocalDateTime to);
+
+    List<Appointment> findByStatusAndScheduledAtBetween(AppointmentStatus status, LocalDateTime from, LocalDateTime to);
+
+    List<Appointment> findByPatient_IdOrderByScheduledAtDesc(Long patientProfileId);
+
+    List<Appointment> findByDoctor_IdOrderByScheduledAtDesc(Long doctorProfileId);
+
+    @Query("SELECT s.name, COUNT(a) FROM Appointment a JOIN a.doctor.specializations s GROUP BY s.name ORDER BY COUNT(a) DESC")
+    List<Object[]> countAppointmentsBySpecialization();
 }

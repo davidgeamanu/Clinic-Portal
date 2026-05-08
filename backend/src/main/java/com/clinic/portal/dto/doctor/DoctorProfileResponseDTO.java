@@ -12,8 +12,12 @@ public record DoctorProfileResponseDTO(
         String firstName,
         String lastName,
         String phoneNumber,
+        boolean active,
         String licenseNumber,
         String biography,
         BigDecimal consultationFee,
+        BigDecimal rating,
+        Long roomId,
+        String roomNumber,
         List<SpecializationResponseDTO> specializations
 ) {}
