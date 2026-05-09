@@ -1,6 +1,10 @@
 spring:
   application:
     name: portal
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
   datasource:
     url: jdbc:postgresql://localhost:5432/clinic_portal
     username: postgres
@@ -20,7 +24,7 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration-minutes: 60
+    expiration-minutes: 480
   security:
     login-url: /auth/login
     allowed-urls: /auth/register,/auth/logout,/swagger-ui/**,/v3/api-docs/**
