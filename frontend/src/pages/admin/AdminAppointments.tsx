@@ -12,6 +12,7 @@ import type { AppointmentMode, AppointmentResponse, AppointmentStatus, RoomType 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
     SCHEDULED:    "bg-warning/10 text-warning border-warning/20",
     CONFIRMED:    "bg-success/10 text-success border-success/20",
+    IN_PROGRESS:  "bg-primary/10 text-primary border-primary/20",
     COMPLETED:    "bg-muted text-muted-foreground border-border",
     CANCELLED:    "bg-muted text-muted-foreground border-border",
 };
@@ -36,6 +37,7 @@ const STATUS_OPTIONS: Array<{ label: string; value: AppointmentStatus | "all" }>
     { label: "All Statuses", value: "all" },
     { label: "Scheduled",    value: "SCHEDULED" },
     { label: "Confirmed",    value: "CONFIRMED" },
+    { label: "In Progress",  value: "IN_PROGRESS" },
     { label: "Completed",    value: "COMPLETED" },
     { label: "Cancelled",    value: "CANCELLED" },
 ];

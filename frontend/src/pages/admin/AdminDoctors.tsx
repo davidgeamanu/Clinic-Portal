@@ -20,6 +20,7 @@ import type { AdminCreateDoctorRequest, AppointmentStatus, DoctorProfileResponse
 const APPOINTMENT_STATUS_STYLES: Record<AppointmentStatus, string> = {
     SCHEDULED:   "bg-warning/10 text-warning border-warning/20",
     CONFIRMED:   "bg-success/10 text-success border-success/20",
+    IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
 };
@@ -38,14 +39,14 @@ function formatTimeRange(iso: string, durationMinutes: number) {
     return `${fmt(start)} – ${fmt(end)}`;
 }
 
-//  Doctor Details Panel
+// ── Doctor Details Panel ──────────────────────────────────────────────────────
 
 function DoctorDetails({ doctor, onToggleStatus }: { doctor: DoctorProfileResponse; onToggleStatus: () => void }) {
     const navigate = useNavigate();
     const { data: appointments = [], isLoading } = useDoctorAppointments(doctor.id);
     const [deptPickerOpen, setDeptPickerOpen] = useState(false);
 
-    const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED");
+    const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED" || a.status === "IN_PROGRESS");
     const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED");
 
     const navigateToDept = (deptName: string) =>
@@ -173,7 +174,7 @@ function AppointmentRow({ patient, date, timeRange, status }: { patient: string;
     );
 }
 
-// Create Doctor Dialog
+// ── Create Doctor Dialog ──────────────────────────────────────────────────────
 
 const EMPTY_FORM: AdminCreateDoctorRequest = {
     email: "", password: "", firstName: "", lastName: "",
@@ -269,7 +270,7 @@ function CreateDoctorDialog({ open, onOpenChange }: { open: boolean; onOpenChang
     );
 }
 
-// Main Page
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminDoctors() {
     const { data: doctors = [], isLoading } = useAllDoctorProfiles();

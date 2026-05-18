@@ -13,6 +13,7 @@ import * as React from "react";
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
     SCHEDULED:   "bg-warning/10 text-warning border-warning/20",
     CONFIRMED:   "bg-success/10 text-success border-success/20",
+    IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
 };
@@ -58,7 +59,7 @@ function formatTimeRange(iso: string, durationMinutes: number) {
 function PatientDetails({ patient, onToggleStatus }: { patient: AdminPatient; onToggleStatus: () => void }) {
     const { data: appointments = [], isLoading } = usePatientAppointments(patient.patientProfileId);
 
-    const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED");
+    const upcoming = appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED" || a.status === "IN_PROGRESS");
     const past = appointments.filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED");
 
     return (

@@ -3,8 +3,8 @@ import type { Role } from "@/types/api";
 /**
  * Centralised query-key factory.
  * Using functions (not plain strings) lets us invalidate at any granularity:
- *   queryKeys.admin.users() -> invalidates every users query
- *   queryKeys.admin.usersByRole('DOCTOR') -> invalidates only the DOCTOR list
+ *   queryKeys.admin.users() - invalidates every users query
+ *   queryKeys.admin.usersByRole('DOCTOR') - invalidates only the DOCTOR list
  */
 export const queryKeys = {
   admin: {
@@ -22,15 +22,27 @@ export const queryKeys = {
     specializations: () => ["admin", "specializations"] as const,
     appointments: () => ["admin", "appointments"] as const,
   },
+  doctor: {
+    all: ["doctor"] as const,
+    me: () => ["doctor", "me"] as const,
+    recentPatients: () => ["doctor", "recentPatients"] as const,
+    consultationNote: (appointmentId: number) => ["doctor", "consultationNote", appointmentId] as const,
+    notes: () => ["doctor", "notes"] as const,
+    patients: () => ["doctor", "patients"] as const,
+    patientSummary: (patientProfileId: number) => ["doctor", "patient", patientProfileId] as const,
+    patientHistory: (patientProfileId: number) => ["doctor", "patient", patientProfileId, "history"] as const,
+  },
   doctors: {
     all: ["doctors"] as const,
     list: () => ["doctors", "list"] as const,
     detail: (id: number) => ["doctors", id] as const,
     bySpecialization: (id: number) => ["doctors", "specialization", id] as const,
+    bookedSlots: (id: number, isoDate: string) => ["doctors", id, "booked-slots", isoDate] as const,
   },
   patients: {
     all: ["patients"] as const,
     me: () => ["patients", "me"] as const,
+    myMedicalRecords: () => ["patients", "me", "medical-records"] as const,
   },
   appointments: {
     all: ["appointments"] as const,
