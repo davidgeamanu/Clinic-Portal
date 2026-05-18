@@ -18,6 +18,10 @@ public class DoctorProfileMapper {
     }
 
     public DoctorProfileResponseDTO toDto(DoctorProfile profile) {
+        return toDto(profile, null);
+    }
+
+    public DoctorProfileResponseDTO toDto(DoctorProfile profile, Double avgConsultationMinutes) {
         User user = profile.getUser();
 
         List<SpecializationResponseDTO> specializations = profile.getSpecializations()
@@ -39,7 +43,8 @@ public class DoctorProfileMapper {
                 profile.getRating(),
                 profile.getRoom() != null ? profile.getRoom().getId() : null,
                 profile.getRoom() != null ? profile.getRoom().getRoomNumber() : null,
-                specializations
+                specializations,
+                avgConsultationMinutes
         );
     }
 }

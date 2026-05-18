@@ -47,6 +47,24 @@ public class PatientServiceImpl implements PatientService {
             profile.setEmergencyContactName(dto.emergencyContactName());
         if (dto.emergencyContactPhone() != null)
             profile.setEmergencyContactPhone(dto.emergencyContactPhone());
+        if (dto.heightCm() != null)
+            profile.setHeightCm(dto.heightCm());
+        if (dto.weightKg() != null)
+            profile.setWeightKg(dto.weightKg());
+        if (dto.allergies() != null)
+            profile.setAllergies(dto.allergies());
+        if (dto.chronicConditions() != null)
+            profile.setChronicConditions(dto.chronicConditions());
+        if (dto.familyHistory() != null)
+            profile.setFamilyHistory(dto.familyHistory());
+        if (dto.lifestyleSmoking() != null)
+            profile.setLifestyleSmoking(dto.lifestyleSmoking());
+        if (dto.lifestyleAlcohol() != null)
+            profile.setLifestyleAlcohol(dto.lifestyleAlcohol());
+        if (dto.lifestyleExercise() != null)
+            profile.setLifestyleExercise(dto.lifestyleExercise());
+        if (dto.lifestyleDiet() != null)
+            profile.setLifestyleDiet(dto.lifestyleDiet());
 
         return patientProfileMapper.toDto(patientProfileRepository.save(profile));
     }

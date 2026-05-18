@@ -1,5 +1,6 @@
 package com.clinic.portal.service.impl;
 
+import com.clinic.portal.dto.appointment.AppointmentRatingRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
@@ -28,9 +29,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Set;
 
 @Service
@@ -51,8 +57,9 @@ public class AppointmentServiceImpl implements AppointmentService {
      * Any transition not in this map is rejected by validateTransition().
      */
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> VALID_TRANSITIONS = Map.of(
-            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED),
-            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED)
+            AppointmentStatus.SCHEDULED,   Set.of(AppointmentStatus.CONFIRMED,   AppointmentStatus.CANCELLED),
+            AppointmentStatus.CONFIRMED,   Set.of(AppointmentStatus.IN_PROGRESS, AppointmentStatus.CANCELLED),
+            AppointmentStatus.IN_PROGRESS, Set.of(AppointmentStatus.COMPLETED)
     );
 
     @Override
@@ -65,10 +72,22 @@ public class AppointmentServiceImpl implements AppointmentService {
         DoctorProfile doctor = doctorProfileRepository.findById(dto.doctorId())
                 .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
 
-        //reject if doctor has any active appointment overlapping this window
-        LocalDateTime endTime = dto.scheduledAt().plusMinutes(dto.durationMinutes());
-        if (appointmentRepository.existsByDoctorAndScheduledAtBetweenAndStatusNot(
-                doctor, dto.scheduledAt(), endTime, AppointmentStatus.CANCELLED)) {
+        // Half-open overlap check: [newStart, newEnd) vs [existingStart, existingEnd).
+        // Two ranges overlap iff existingStart < newEnd AND existingEnd > newStart.
+        // We scan only same-day appointments to keep the result set small.
+        LocalDateTime newStart = dto.scheduledAt();
+        LocalDateTime newEnd = newStart.plusMinutes(dto.durationMinutes());
+        LocalDateTime dayStart = newStart.toLocalDate().atStartOfDay();
+        LocalDateTime dayEnd = newStart.toLocalDate().atTime(LocalTime.MAX);
+
+        boolean conflict = appointmentRepository
+                .findByDoctor_IdAndScheduledAtBetweenAndStatusNot(
+                        doctor.getId(), dayStart, dayEnd, AppointmentStatus.CANCELLED)
+                .stream()
+                .anyMatch(a -> a.getScheduledAt().isBefore(newEnd)
+                        && a.getScheduledAt().plusMinutes(a.getDurationMinutes()).isAfter(newStart));
+
+        if (conflict) {
             throw new DuplicateDataException(ExceptionCode.APPOINTMENT_SLOT_TAKEN);
         }
 
@@ -129,8 +148,20 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new UnauthorizedException(ExceptionCode.ACCESS_DENIED);
         }
 
+        if (dto.status() == AppointmentStatus.IN_PROGRESS) {
+            long minutesUntilStart = ChronoUnit.MINUTES.between(LocalDateTime.now(), appointment.getScheduledAt());
+            if (minutesUntilStart > 0) {
+                throw new BusinessException(ExceptionCode.APPOINTMENT_NOT_YET_STARTABLE);
+            }
+        }
+
         validateTransition(appointment.getStatus(), dto.status());
         appointment.setStatus(dto.status());
+        if (dto.status() == AppointmentStatus.IN_PROGRESS) {
+            appointment.setStartedAt(LocalDateTime.now());
+        } else if (dto.status() == AppointmentStatus.COMPLETED) {
+            appointment.setCompletedAt(LocalDateTime.now());
+        }
         Appointment saved = appointmentRepository.save(appointment);
 
         updateRoomStatus(saved);
@@ -150,13 +181,42 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentMapper.toDto(saved);
     }
 
+    @Override
+    @Transactional
+    public AppointmentResponseDTO rateAppointment(Long appointmentId, AppointmentRatingRequestDTO dto) {
+        Appointment appointment = findAppointment(appointmentId);
+
+        if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+            throw new BusinessException(ExceptionCode.APPOINTMENT_NOT_COMPLETED);
+        }
+        if (appointment.getRating() != null) {
+            throw new BusinessException(ExceptionCode.APPOINTMENT_ALREADY_RATED);
+        }
+
+        appointment.setRating(dto.rating());
+        appointment.setReview(dto.review());
+        appointmentRepository.save(appointment);
+
+        // Recompute doctor's aggregate rating across all rated appointments.
+        DoctorProfile doctor = appointment.getDoctor();
+        OptionalDouble avg = appointmentRepository.findByDoctorOrderByScheduledAtDesc(doctor).stream()
+                .map(Appointment::getRating)
+                .filter(java.util.Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .average();
+        doctor.setRating(avg.isPresent() ? BigDecimal.valueOf(avg.getAsDouble()).setScale(2, RoundingMode.HALF_UP) : null);
+        doctorProfileRepository.save(doctor);
+
+        return appointmentMapper.toDto(appointment);
+    }
+
     private void updateRoomStatus(Appointment appointment) {
         if (appointment.getMode() != AppointmentMode.IN_PERSON) return;
         var room = appointment.getDoctor().getRoom();
         if (room == null) return;
-        room.setStatus(appointment.getStatus() == AppointmentStatus.CONFIRMED
-                ? RoomStatus.OCCUPIED
-                : RoomStatus.FREE);
+        boolean occupied = appointment.getStatus() == AppointmentStatus.CONFIRMED
+                || appointment.getStatus() == AppointmentStatus.IN_PROGRESS;
+        room.setStatus(occupied ? RoomStatus.OCCUPIED : RoomStatus.FREE);
         roomRepository.save(room);
     }
 
@@ -169,9 +229,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private NotificationType notificationTypeFor(AppointmentStatus status) {
         return switch (status) {
-            case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
-            case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
-            default -> NotificationType.GENERAL;
+            case CONFIRMED   -> NotificationType.APPOINTMENT_CONFIRMED;
+            case IN_PROGRESS -> NotificationType.APPOINTMENT_STARTED;
+            case CANCELLED   -> NotificationType.APPOINTMENT_CANCELLED;
+            default          -> NotificationType.GENERAL;
         };
     }
 

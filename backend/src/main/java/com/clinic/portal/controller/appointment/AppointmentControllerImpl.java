@@ -1,5 +1,6 @@
 package com.clinic.portal.controller.appointment;
 
+import com.clinic.portal.dto.appointment.AppointmentRatingRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
@@ -55,6 +56,13 @@ public class AppointmentControllerImpl implements AppointmentController {
     public AppointmentResponseDTO updateStatus(Long appointmentId, AppointmentStatusUpdateDTO dto) {
         log.info("[APPOINTMENT] Updating status of appointment: {} to {}", appointmentId, dto.status());
         return appointmentService.updateStatus(appointmentId, dto, currentUser().getId());
+    }
+
+    @Override
+    @PreAuthorize("hasRole('PATIENT') and @authz.isOwnAppointment(#appointmentId)")
+    public AppointmentResponseDTO rate(Long appointmentId, AppointmentRatingRequestDTO dto) {
+        log.info("[APPOINTMENT] Rating appointment {} with {} stars", appointmentId, dto.rating());
+        return appointmentService.rateAppointment(appointmentId, dto);
     }
 
     private UserDetailsImpl currentUser() {

@@ -30,6 +30,9 @@ public enum ExceptionCode {
     APPOINTMENT_NOT_FOUND("Appointment not found.", "ERR_6001"),
     APPOINTMENT_SLOT_TAKEN("The selected time slot is already booked.", "ERR_6002"),
     APPOINTMENT_CANNOT_BE_MODIFIED("This appointment cannot be modified in its current state.", "ERR_6003"),
+    APPOINTMENT_NOT_YET_STARTABLE("This appointment cannot be started before its scheduled time.", "ERR_6004"),
+    APPOINTMENT_NOT_COMPLETED("Only completed appointments can be rated.", "ERR_6005"),
+    APPOINTMENT_ALREADY_RATED("This appointment has already been rated.", "ERR_6006"),
 
     // Consultation & Documents
     CONSULTATION_NOTE_NOT_FOUND("Consultation note not found.", "ERR_7001"),

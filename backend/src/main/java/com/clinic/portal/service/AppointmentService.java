@@ -1,5 +1,6 @@
 package com.clinic.portal.service;
 
+import com.clinic.portal.dto.appointment.AppointmentRatingRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
@@ -17,4 +18,6 @@ public interface AppointmentService {
     List<AppointmentResponseDTO> getDoctorAppointments(Long doctorUserId);
 
     AppointmentResponseDTO updateStatus(Long appointmentId, AppointmentStatusUpdateDTO dto, Long requestingUserId);
+
+    AppointmentResponseDTO rateAppointment(Long appointmentId, AppointmentRatingRequestDTO dto);
 }

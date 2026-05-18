@@ -22,7 +22,16 @@ public class PatientProfileMapper {
                 profile.getBloodType(),
                 profile.getAddress(),
                 profile.getEmergencyContactName(),
-                profile.getEmergencyContactPhone()
+                profile.getEmergencyContactPhone(),
+                profile.getHeightCm(),
+                profile.getWeightKg(),
+                profile.getAllergies(),
+                profile.getChronicConditions(),
+                profile.getFamilyHistory(),
+                profile.getLifestyleSmoking(),
+                profile.getLifestyleAlcohol(),
+                profile.getLifestyleExercise(),
+                profile.getLifestyleDiet()
         );
     }
 }

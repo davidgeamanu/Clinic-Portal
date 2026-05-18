@@ -1,5 +1,6 @@
 package com.clinic.portal.controller.appointment;
 
+import com.clinic.portal.dto.appointment.AppointmentRatingRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
@@ -82,4 +83,20 @@ public interface AppointmentController {
     })
     @ResponseStatus(HttpStatus.OK)
     AppointmentResponseDTO updateStatus(@PathVariable Long appointmentId, @RequestBody @Valid AppointmentStatusUpdateDTO dto);
+
+    @PostMapping("/{appointmentId}/rate")
+    @Operation(summary = "Rate a completed appointment", description = "Submit a 1–5 star rating and an optional review for a completed appointment. Each appointment can be rated only once.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Rating submitted",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AppointmentResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Appointment not completed or already rated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class))),
+            @ApiResponse(responseCode = "403", description = "Not the patient on this appointment",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    AppointmentResponseDTO rate(@PathVariable Long appointmentId, @RequestBody @Valid AppointmentRatingRequestDTO dto);
 }

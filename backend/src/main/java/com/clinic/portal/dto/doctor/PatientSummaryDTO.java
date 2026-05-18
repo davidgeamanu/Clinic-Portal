@@ -1,22 +1,16 @@
-package com.clinic.portal.dto.patient;
-
-import com.clinic.portal.model.enums.BloodType;
-import com.clinic.portal.model.enums.Gender;
+package com.clinic.portal.dto.doctor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
-public record PatientProfileResponseDTO(
-        Long id,
-        Long userId,
-        String email,
+public record PatientSummaryDTO(
+        Long patientProfileId,
         String firstName,
         String lastName,
+        String email,
         String phoneNumber,
-        LocalDate dateOfBirth,
-        Gender gender,
-        BloodType bloodType,
-        String address,
+        String dateOfBirth,
+        String gender,
+        String bloodType,
         String emergencyContactName,
         String emergencyContactPhone,
         Integer heightCm,
@@ -27,5 +21,4 @@ public record PatientProfileResponseDTO(
         String lifestyleSmoking,
         String lifestyleAlcohol,
         String lifestyleExercise,
-        String lifestyleDiet
-) {}
+        String lifestyleDiet) {}

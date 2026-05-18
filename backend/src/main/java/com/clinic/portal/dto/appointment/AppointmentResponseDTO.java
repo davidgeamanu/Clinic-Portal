@@ -20,5 +20,9 @@ public record AppointmentResponseDTO(
         String roomDepartment,
         AppointmentStatus status,
         String reason,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime startedAt,
+        LocalDateTime completedAt,
+        Integer rating,
+        String review
 ) {}

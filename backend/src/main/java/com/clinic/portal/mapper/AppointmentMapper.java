@@ -41,7 +41,11 @@ public class AppointmentMapper {
                 roomDepartment,
                 appointment.getStatus(),
                 appointment.getReason(),
-                appointment.getCreatedAt()
+                appointment.getCreatedAt(),
+                appointment.getStartedAt(),
+                appointment.getCompletedAt(),
+                appointment.getRating(),
+                appointment.getReview()
         );
     }
 }

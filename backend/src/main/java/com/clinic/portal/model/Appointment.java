@@ -53,6 +53,15 @@ public class Appointment extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
+    private LocalDateTime startedAt;
+
+    private LocalDateTime completedAt;
+
+    private Integer rating;
+
+    @Column(columnDefinition = "TEXT")
+    private String review;
+
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ConsultationNote consultationNote;
 }

@@ -21,14 +21,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByDoctorOrderByScheduledAtAsc(DoctorProfile doctor);
 
-    List<Appointment> findByDoctorAndStatus(DoctorProfile doctor, AppointmentStatus status);
+    List<Appointment> findByDoctorOrderByScheduledAtDesc(DoctorProfile doctor);
 
-    boolean existsByDoctorAndScheduledAtBetweenAndStatusNot(
-            DoctorProfile doctor,
-            LocalDateTime from,
-            LocalDateTime to,
-            AppointmentStatus status
-    );
+    List<Appointment> findByDoctorAndStatus(DoctorProfile doctor, AppointmentStatus status);
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.id = :id AND (a.patient.id = :profileId OR a.doctor.id = :profileId)")
     long countByIdAndProfileId(@Param("id") Long id, @Param("profileId") Long profileId);
@@ -43,6 +38,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByDoctor_IdOrderByScheduledAtDesc(Long doctorProfileId);
 
+    List<Appointment> findByDoctorAndStatusOrderByScheduledAtDesc(DoctorProfile doctor, AppointmentStatus status);
+
+    List<Appointment> findByDoctor_IdAndScheduledAtBetweenAndStatusNot(
+            Long doctorId, LocalDateTime from, LocalDateTime to, AppointmentStatus excludedStatus);
+
+    boolean existsByDoctorAndPatient(DoctorProfile doctor, PatientProfile patient);
+
     @Query("SELECT s.name, COUNT(a) FROM Appointment a JOIN a.doctor.specializations s GROUP BY s.name ORDER BY COUNT(a) DESC")
     List<Object[]> countAppointmentsBySpecialization();
+
+    @Query("SELECT a FROM Appointment a WHERE a.status = com.clinic.portal.model.enums.AppointmentStatus.COMPLETED AND a.startedAt IS NOT NULL AND a.completedAt IS NOT NULL")
+    List<Appointment> findCompletedWithTimestamps();
 }
