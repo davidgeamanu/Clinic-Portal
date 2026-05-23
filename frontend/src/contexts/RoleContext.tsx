@@ -39,11 +39,11 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <RoleContext.Provider
-      value={{ user, setUser, clearUser, isAuthenticated: !!user }}
-    >
-      {children}
-    </RoleContext.Provider>
+      <RoleContext.Provider
+          value={{ user, setUser, clearUser, isAuthenticated: !!user }}
+      >
+        {children}
+      </RoleContext.Provider>
   );
 }
 
