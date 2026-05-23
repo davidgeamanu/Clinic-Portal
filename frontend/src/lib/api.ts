@@ -2,7 +2,7 @@ import axios, { type AxiosError } from "axios";
 import type { ApiError } from "@/types/api";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: "/api",
   withCredentials: true, // send the HttpOnly JWT cookie on every request
 });
 

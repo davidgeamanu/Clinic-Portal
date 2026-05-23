@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     host: "::",
     port: 5173,
+    proxy: {
+      "/api/notifications": { target: "http://localhost:8081", changeOrigin: true },
+      "/api": { target: "http://localhost:8080", changeOrigin: true },
+    },
     hmr: {
       overlay: false,
     },

@@ -67,6 +67,19 @@ export function useMarkNotificationRead() {
   });
 }
 
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => patientApi.markAllNotificationsRead(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.notifications.mine() });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to mark notifications as read."));
+    },
+  });
+}
+
 export function useDoctorsList() {
   return useQuery({
     queryKey: queryKeys.doctors.list(),

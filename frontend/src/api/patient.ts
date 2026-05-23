@@ -41,7 +41,10 @@ export const patientApi = {
         api.get<NotificationResponse[]>("/notifications/me").then((r) => r.data),
 
     markNotificationRead: (notificationId: number) =>
-        api.patch<NotificationResponse>(`/notifications/${notificationId}/read`).then((r) => r.data),
+        api.patch<void>(`/notifications/${notificationId}/read`),
+
+    markAllNotificationsRead: () =>
+        api.patch<void>("/notifications/read-all"),
 
     getDoctors: () =>
         api.get<DoctorProfileResponse[]>("/doctors").then((r) => r.data),
