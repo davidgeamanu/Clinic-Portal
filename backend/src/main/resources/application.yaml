@@ -1,6 +1,11 @@
 spring:
   application:
     name: portal
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
   servlet:
     multipart:
       max-file-size: 20MB
@@ -30,3 +35,7 @@ app:
     allowed-urls: /auth/register,/auth/logout,/swagger-ui/**,/v3/api-docs/**
   storage:
     location: uploads
+  messaging:
+    appointment-booked-queue: clinic.appointment-booked.queue
+    appointment-status-changed-queue: clinic.appointment-status-changed.queue
+    consultation-note-created-queue: clinic.consultation-note-created.queue
