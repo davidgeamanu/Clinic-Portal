@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Video, MapPin, Clock, Calendar, User, CheckCircle2, CircleDashed } from "lucide-react";
+import { ChevronLeft, ChevronRight, Video, MapPin, Clock, Calendar, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDoctorAppointments, useUpdateAppointmentStatus } from "@/hooks/useDoctor";
 import type { AppointmentMode, AppointmentResponse, AppointmentStatus } from "@/types/api";
@@ -29,14 +29,6 @@ const BADGE_STYLES: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
   COMPLETED:   "bg-muted text-muted-foreground border-border",
   CANCELLED:   "bg-muted text-muted-foreground border-border",
-};
-
-const STATUS_LABELS: Record<AppointmentStatus, string> = {
-  SCHEDULED:   "Upcoming",
-  CONFIRMED:   "Confirmed",
-  IN_PROGRESS: "In Progress",
-  COMPLETED:   "Completed",
-  CANCELLED:   "Cancelled",
 };
 
 const STATUS_DISPLAY_LABELS: Record<AppointmentStatus, string> = {
@@ -279,26 +271,8 @@ export default function DoctorSchedule() {
                               </div>
                             </div>
                             <Badge variant="outline" className={BADGE_STYLES[apt.status]}>
-                              {STATUS_LABELS[apt.status]}
+                              {STATUS_DISPLAY_LABELS[apt.status]}
                             </Badge>
-                            {apt.status === "SCHEDULED" && (
-                                <span className="flex items-center gap-1.5 text-xs text-warning shrink-0">
-                                                <CircleDashed className="h-4 w-4" />
-                                                Awaits Confirmation
-                                            </span>
-                            )}
-                            {apt.status === "CONFIRMED" && (
-                                <span className="flex items-center gap-1.5 text-xs text-primary shrink-0">
-                                                <CheckCircle2 className="h-4 w-4" />
-                                                Confirmed
-                                            </span>
-                            )}
-                            {apt.status === "COMPLETED" && (
-                                <span className="flex items-center gap-1.5 text-xs text-success shrink-0">
-                                                <CheckCircle2 className="h-4 w-4" />
-                                                Completed
-                                            </span>
-                            )}
                             {apt.status === "SCHEDULED" && (
                                 <Button size="sm" variant="outline" disabled={updateStatus.isPending}
                                         onClick={() => triggerAction(apt, "CONFIRMED")}>Confirm</Button>
