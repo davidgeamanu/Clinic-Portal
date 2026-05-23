@@ -52,7 +52,7 @@ const MODE_LABELS: Record<AppointmentMode, string> = {
   VIDEO:     "Video",
 };
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
+// ── Date helpers ──
 
 function getWeekDates(offset: number): Date[] {
   const today = new Date();
@@ -112,7 +112,7 @@ function actionText(status: AppointmentStatus): { title: string; description: st
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ──
 
 export default function DoctorSchedule() {
   const todayDow = new Date().getDay();
