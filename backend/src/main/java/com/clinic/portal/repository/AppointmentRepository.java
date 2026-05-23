@@ -4,6 +4,7 @@ import com.clinic.portal.model.Appointment;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.PatientProfile;
 import com.clinic.portal.model.enums.AppointmentStatus;
+import com.clinic.portal.repository.projection.StaleAppointmentView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +34,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByScheduledAtBetween(LocalDateTime from, LocalDateTime to);
 
     List<Appointment> findByStatusAndScheduledAtBetween(AppointmentStatus status, LocalDateTime from, LocalDateTime to);
+
+    @Query("""
+            SELECT a.id AS id, d.user.id AS doctorUserId
+            FROM Appointment a JOIN a.doctor d
+            WHERE a.status = :status AND a.scheduledAt < :cutoff
+            """)
+    List<StaleAppointmentView> findStaleForCancellation(
+            @Param("status") AppointmentStatus status,
+            @Param("cutoff") LocalDateTime cutoff);
 
     List<Appointment> findByPatient_IdOrderByScheduledAtDesc(Long patientProfileId);
 

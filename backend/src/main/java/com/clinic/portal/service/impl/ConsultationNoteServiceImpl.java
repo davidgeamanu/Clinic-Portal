@@ -5,6 +5,7 @@ import com.clinic.portal.dto.consultation.ConsultationNoteResponseDTO;
 import com.clinic.portal.dto.consultation.DoctorNoteListItemDTO;
 import com.clinic.portal.dto.consultation.MedicalDocumentResponseDTO;
 import com.clinic.portal.dto.consultation.PatientHistoryItemDTO;
+import com.clinic.portal.event.ConsultationNoteCreatedEvent;
 import com.clinic.portal.exception.BusinessException;
 import com.clinic.portal.exception.DataNotFoundException;
 import com.clinic.portal.exception.DuplicateDataException;
@@ -14,7 +15,6 @@ import com.clinic.portal.mapper.ConsultationNoteMapper;
 import com.clinic.portal.mapper.MedicalDocumentMapper;
 import com.clinic.portal.model.*;
 import com.clinic.portal.model.enums.AppointmentStatus;
-import com.clinic.portal.model.enums.NotificationType;
 import com.clinic.portal.repository.AppointmentRepository;
 import com.clinic.portal.repository.ConsultationNoteRepository;
 import com.clinic.portal.repository.DoctorProfileRepository;
@@ -22,9 +22,9 @@ import com.clinic.portal.repository.MedicalDocumentRepository;
 import com.clinic.portal.repository.PatientProfileRepository;
 import com.clinic.portal.repository.UserRepository;
 import com.clinic.portal.service.ConsultationNoteService;
-import com.clinic.portal.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -51,9 +51,9 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
     private final ConsultationNoteMapper consultationNoteMapper;
     private final MedicalDocumentMapper medicalDocumentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${app.storage.location}")
     private String storageLocation;
@@ -98,14 +98,7 @@ public class ConsultationNoteServiceImpl implements ConsultationNoteService {
 
         ConsultationNote saved = consultationNoteRepository.save(note);
 
-        // Notify the patient their consultation notes are ready
-        User patientUser = appointment.getPatient().getUser();
-        notificationService.send(
-                patientUser,
-                "Your consultation notes are available for appointment on " + appointment.getScheduledAt(),
-                NotificationType.CONSULTATION_NOTE_ADDED,
-                saved.getId()
-        );
+        eventPublisher.publishEvent(new ConsultationNoteCreatedEvent(saved.getId(), appointment.getId()));
 
         return consultationNoteMapper.toDto(saved);
     }
