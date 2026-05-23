@@ -52,7 +52,7 @@ public class AppointmentControllerImpl implements AppointmentController {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @authz.isOwnAppointment(#appointmentId)")
+    @PreAuthorize("@authz.canUpdateAppointmentStatus(#appointmentId, #dto.status())")
     public AppointmentResponseDTO updateStatus(Long appointmentId, AppointmentStatusUpdateDTO dto) {
         log.info("[APPOINTMENT] Updating status of appointment: {} to {}", appointmentId, dto.status());
         return appointmentService.updateStatus(appointmentId, dto, currentUser().getId());

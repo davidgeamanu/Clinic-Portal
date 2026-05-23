@@ -1,16 +1,17 @@
-// Enums
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 export type Role = "ADMIN" | "DOCTOR" | "PATIENT";
 
 export type AppointmentStatus =
     | "SCHEDULED"
     | "CONFIRMED"
+    | "IN_PROGRESS"
     | "COMPLETED"
     | "CANCELLED";
 
 export type AppointmentMode = "IN_PERSON" | "VIDEO";
 
-//  Auth
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface AuthResponse {
   role: Role;
@@ -31,7 +32,7 @@ export interface RegisterRequest {
   phoneNumber: string;
 }
 
-// User
+// ─── User ─────────────────────────────────────────────────────────────────────
 
 export interface UserResponse {
   id: number;
@@ -43,7 +44,7 @@ export interface UserResponse {
   active: boolean;
 }
 
-// Specialization
+// ─── Specialization ───────────────────────────────────────────────────────────
 
 export interface SpecializationResponse {
   id: number;
@@ -56,7 +57,7 @@ export interface SpecializationRequest {
   description?: string;
 }
 
-// Doctor
+// ─── Doctor ───────────────────────────────────────────────────────────────────
 
 export interface DoctorProfileResponse {
   id: number;
@@ -73,6 +74,7 @@ export interface DoctorProfileResponse {
   roomId: number | null;
   roomNumber: string | null;
   specializations: SpecializationResponse[];
+  avgConsultationMinutes: number | null;
 }
 
 export interface AdminCreateDoctorRequest {
@@ -86,7 +88,7 @@ export interface AdminCreateDoctorRequest {
   specializationIds?: number[];
 }
 
-// Appointment
+// ─── Appointment ──────────────────────────────────────────────────────────────
 
 export interface AppointmentResponse {
   id: number;
@@ -103,9 +105,13 @@ export interface AppointmentResponse {
   status: AppointmentStatus;
   reason: string | null;
   createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  rating: number | null;
+  review: string | null;
 }
 
-// Room
+// ─── Room ─────────────────────────────────────────────────────────────────────
 
 export type RoomType = "CONSULT" | "OR" | "IMAGING";
 export type RoomStatus = "FREE" | "OCCUPIED";
@@ -128,7 +134,189 @@ export interface RoomUpdateRequest {
   status: RoomStatus;
 }
 
-// Admin Patient
+// ─── Consultation Notes ───────────────────────────────────────────────────────
+
+export interface ConsultationNoteResponse {
+  id: number;
+  appointmentId: number;
+  diagnosis: string;
+  treatment: string | null;
+  prescription: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ConsultationNoteRequest {
+  diagnosis: string;
+  treatment?: string;
+  prescription?: string;
+  notes?: string;
+}
+
+// ─── Doctor Patient List ──────────────────────────────────────────────────────
+
+export interface DoctorPatientListItem {
+  patientProfileId: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  gender: string | null;
+  bloodType: string | null;
+  email: string;
+  phoneNumber: string | null;
+  lastVisitDate: string | null;
+  lastDiagnosis: string | null;
+  appointmentCount: number;
+}
+
+// ─── Doctor Note List ─────────────────────────────────────────────────────────
+
+export interface DoctorNoteListItem {
+  noteId: number;
+  appointmentId: number;
+  patientProfileId: number;
+  patientName: string;
+  appointmentDate: string;
+  diagnosis: string;
+  treatment: string | null;
+  prescription: string | null;
+  notes: string | null;
+  documents: MedicalDocument[];
+}
+
+// ─── Medical Documents ────────────────────────────────────────────────────────
+
+export interface MedicalDocument {
+  id: number;
+  originalFileName: string;
+  contentType: string;
+  fileSizeBytes: number;
+  createdAt: string;
+}
+
+// ─── Patient History (all consultation notes across all doctors) ──────────────
+
+export interface PatientHistoryItem {
+  noteId: number;
+  appointmentId: number;
+  appointmentDate: string;
+  doctorName: string;
+  diagnosis: string;
+  treatment: string | null;
+  prescription: string | null;
+  notes: string | null;
+  documents: MedicalDocument[];
+}
+
+// ─── Patient Summary (doctor view) ───────────────────────────────────────────
+
+export interface PatientSummary {
+  patientProfileId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  bloodType: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  allergies: string | null;
+  chronicConditions: string | null;
+  familyHistory: string | null;
+  lifestyleSmoking: string | null;
+  lifestyleAlcohol: string | null;
+  lifestyleExercise: string | null;
+  lifestyleDiet: string | null;
+}
+
+// ─── Doctor Dashboard ─────────────────────────────────────────────────────────
+
+export interface RecentPatient {
+  patientProfileId: number;
+  firstName: string;
+  lastName: string;
+  lastVisitDate: string;
+  diagnosis: string | null;
+  notes: string | null;
+}
+
+// ─── Booked slots (for booking-flow availability check) ──────────────────────
+
+export interface BookedSlot {
+  scheduledAt: string;        // ISO LocalDateTime
+  durationMinutes: number;
+}
+
+// ─── Patient Profile (self view) ──────────────────────────────────────────────
+
+export interface PatientProfileResponse {
+  id: number;
+  userId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  bloodType: string | null;
+  address: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  allergies: string | null;
+  chronicConditions: string | null;
+  familyHistory: string | null;
+  lifestyleSmoking: string | null;
+  lifestyleAlcohol: string | null;
+  lifestyleExercise: string | null;
+  lifestyleDiet: string | null;
+}
+
+export interface PatientProfileUpdateRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  bloodType?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  allergies?: string;
+  chronicConditions?: string;
+  familyHistory?: string;
+  lifestyleSmoking?: string;
+  lifestyleAlcohol?: string;
+  lifestyleExercise?: string;
+  lifestyleDiet?: string;
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export type NotificationType =
+    | "APPOINTMENT_SCHEDULED"
+    | "APPOINTMENT_CONFIRMED"
+    | "APPOINTMENT_STARTED"
+    | "APPOINTMENT_CANCELLED"
+    | "CONSULTATION_NOTE_ADDED"
+    | "GENERAL";
+
+export interface NotificationResponse {
+  id: number;
+  message: string;
+  type: NotificationType;
+  read: boolean;
+  relatedEntityId: number | null;
+  createdAt: string;
+}
+
+// ─── Admin Patient ────────────────────────────────────────────────────────────
 
 export interface AdminPatient {
   patientProfileId: number;
@@ -146,7 +334,7 @@ export interface AdminPatient {
   emergencyContactPhone: string | null;
 }
 
-// Admin Department
+// ─── Admin Department ─────────────────────────────────────────────────────────
 
 export interface AdminDepartment {
   id: number;
@@ -158,7 +346,7 @@ export interface AdminDepartment {
   imagingRoomCount: number;
 }
 
-// Admin Dashboard
+// ─── Admin Dashboard ──────────────────────────────────────────────────────────
 
 export interface DailyStats {
   day: string;
@@ -181,7 +369,7 @@ export interface AdminDashboard {
   departmentLoad: DepartmentLoad[];
 }
 
-// Admin Analytics
+// ─── Admin Analytics ──────────────────────────────────────────────────────────
 
 export interface MonthlyRevenue {
   month: string;
@@ -200,7 +388,7 @@ export interface AdminAnalytics {
   patientTrend: MonthlyPatientCount[];
 }
 
-// API Error (mirrors ExceptionBody)
+// ─── API Error (mirrors ExceptionBody) ────────────────────────────────────────
 
 export interface ApiError {
   timestamp: string;
