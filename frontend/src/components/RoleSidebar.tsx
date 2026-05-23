@@ -35,6 +35,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { icon: Clock,           label: "Schedule",        path: "/doctor/schedule" },
     // { icon: ClipboardList,   label: "Prescriptions",   path: "/doctor/prescriptions" },
     { icon: FileText,        label: "Medical Records", path: "/doctor/notes" },
+    { icon: Bell,            label: "Notifications",   path: "/doctor/notifications" },
   ],
   PATIENT: [
     { icon: LayoutDashboard, label: "Dashboard",       path: "/patient" },
