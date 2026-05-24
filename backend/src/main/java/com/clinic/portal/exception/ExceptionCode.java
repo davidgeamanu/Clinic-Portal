@@ -51,6 +51,8 @@ public enum ExceptionCode {
     // Authorization
     ACCESS_DENIED("You are not allowed to perform this action.", "ERR_9001"),
     INVALID_CREDENTIALS("Invalid email or password.", "ERR_9002"),
+    INCORRECT_PASSWORD("Current password is incorrect.", "ERR_9003"),
+    PASSWORD_SAME_AS_CURRENT("New password must be different from the current password.", "ERR_9004"),
 
     // Server
     SERVER_ERROR("Internal server error.", "ERR_9999");

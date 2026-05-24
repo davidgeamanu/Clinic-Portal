@@ -15,6 +15,15 @@ import java.time.LocalDate;
 
 public record PatientProfileUpdateDTO(
 
+        @Size(max = 100)
+        String firstName,
+
+        @Size(max = 100)
+        String lastName,
+
+        @Size(max = 20)
+        String phoneNumber,
+
         @Past(message = "Date of birth must be in the past")
         LocalDate dateOfBirth,
 

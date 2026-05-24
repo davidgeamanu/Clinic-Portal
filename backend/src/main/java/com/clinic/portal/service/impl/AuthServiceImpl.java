@@ -1,7 +1,9 @@
 package com.clinic.portal.service.impl;
 
 import com.clinic.portal.dto.auth.AuthResponseDTO;
+import com.clinic.portal.dto.auth.ChangePasswordDTO;
 import com.clinic.portal.dto.auth.RegisterRequestDTO;
+import com.clinic.portal.exception.BusinessException;
 import com.clinic.portal.exception.DuplicateDataException;
 import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.model.PatientProfile;
@@ -52,5 +54,23 @@ public class AuthServiceImpl implements AuthService {
         patientProfileRepository.save(profile);
 
         return new AuthResponseDTO(user.getRole(), user.getId(), user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(dto.currentPassword(), user.getPasswordHash())) {
+            throw new BusinessException(ExceptionCode.INCORRECT_PASSWORD);
+        }
+
+        if (passwordEncoder.matches(dto.newPassword(), user.getPasswordHash())) {
+            throw new BusinessException(ExceptionCode.PASSWORD_SAME_AS_CURRENT);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(dto.newPassword()));
+        userRepository.save(user);
     }
 }

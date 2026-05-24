@@ -33,8 +33,15 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientProfileResponseDTO updateProfile(Long userId, PatientProfileUpdateDTO dto) {
         PatientProfile profile = findProfileByUserId(userId);
+        User user = profile.getUser();
 
-        // Sending null for a field means "leave it as is", not "clear it"
+        if (dto.firstName() != null)
+            user.setFirstName(dto.firstName());
+        if (dto.lastName() != null)
+            user.setLastName(dto.lastName());
+        if (dto.phoneNumber() != null)
+            user.setPhoneNumber(dto.phoneNumber());
+
         if (dto.dateOfBirth() != null)
             profile.setDateOfBirth(dto.dateOfBirth());
         if (dto.gender() != null)

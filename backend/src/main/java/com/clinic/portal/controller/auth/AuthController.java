@@ -1,6 +1,7 @@
 package com.clinic.portal.controller.auth;
 
 import com.clinic.portal.dto.auth.AuthResponseDTO;
+import com.clinic.portal.dto.auth.ChangePasswordDTO;
 import com.clinic.portal.dto.auth.LoginRequestDTO;
 import com.clinic.portal.dto.auth.RegisterRequestDTO;
 import com.clinic.portal.exception.ExceptionBody;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -50,4 +52,15 @@ public interface AuthController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     AuthResponseDTO register(@RequestBody @Valid RegisterRequestDTO dto);
+
+    @PatchMapping("/password")
+    @Operation(summary = "Change password", description = "Change the password of the currently authenticated user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Password changed"),
+            @ApiResponse(responseCode = "400", description = "Current password is incorrect",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void changePassword(@RequestBody @Valid ChangePasswordDTO dto);
 }
