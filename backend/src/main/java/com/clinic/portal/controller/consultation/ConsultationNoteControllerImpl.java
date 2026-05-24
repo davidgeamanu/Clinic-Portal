@@ -5,7 +5,7 @@ import com.clinic.portal.dto.consultation.ConsultationNoteResponseDTO;
 import com.clinic.portal.dto.consultation.DoctorNoteListItemDTO;
 import com.clinic.portal.dto.consultation.MedicalDocumentResponseDTO;
 import com.clinic.portal.dto.consultation.PatientHistoryItemDTO;
-import com.clinic.portal.security.UserDetailsImpl;
+import com.clinic.portal.controller.AuthenticatedController;
 import com.clinic.portal.service.ConsultationNoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/consultation-notes")
 @RequiredArgsConstructor
-public class ConsultationNoteControllerImpl implements ConsultationNoteController {
+public class ConsultationNoteControllerImpl implements ConsultationNoteController, AuthenticatedController {
 
     private final ConsultationNoteService consultationNoteService;
 
@@ -98,7 +97,4 @@ public class ConsultationNoteControllerImpl implements ConsultationNoteControlle
         return consultationNoteService.uploadDocument(noteId, file, currentUser().getId());
     }
 
-    private UserDetailsImpl currentUser() {
-        return (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
 }

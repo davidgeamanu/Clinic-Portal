@@ -6,12 +6,11 @@ import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
 import com.clinic.portal.dto.doctor.PatientSummaryDTO;
 import com.clinic.portal.dto.doctor.RecentPatientDTO;
-import com.clinic.portal.security.UserDetailsImpl;
+import com.clinic.portal.controller.AuthenticatedController;
 import com.clinic.portal.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/doctors")
 @RequiredArgsConstructor
-public class DoctorControllerImpl implements DoctorController {
+public class DoctorControllerImpl implements DoctorController, AuthenticatedController {
 
     private final DoctorService doctorService;
 
@@ -87,9 +86,5 @@ public class DoctorControllerImpl implements DoctorController {
     public DoctorProfileResponseDTO updateMyProfile(DoctorProfileUpdateDTO dto) {
         log.info("[DOCTOR] Updating profile for user: {}", currentUser().getId());
         return doctorService.updateProfile(currentUser().getId(), dto);
-    }
-
-    private UserDetailsImpl currentUser() {
-        return (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

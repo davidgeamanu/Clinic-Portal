@@ -4,12 +4,11 @@ import com.clinic.portal.dto.appointment.AppointmentRatingRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentRequestDTO;
 import com.clinic.portal.dto.appointment.AppointmentResponseDTO;
 import com.clinic.portal.dto.appointment.AppointmentStatusUpdateDTO;
-import com.clinic.portal.security.UserDetailsImpl;
+import com.clinic.portal.controller.AuthenticatedController;
 import com.clinic.portal.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/appointments")
 @RequiredArgsConstructor
-public class AppointmentControllerImpl implements AppointmentController {
+public class AppointmentControllerImpl implements AppointmentController, AuthenticatedController {
 
     private final AppointmentService appointmentService;
 
@@ -65,7 +64,4 @@ public class AppointmentControllerImpl implements AppointmentController {
         return appointmentService.rateAppointment(appointmentId, dto);
     }
 
-    private UserDetailsImpl currentUser() {
-        return (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
 }
