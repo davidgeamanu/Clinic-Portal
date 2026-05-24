@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Unused components
+src/components/ActivityChart.tsx
+src/components/AppointmentsList.tsx
+src/components/BookAppointmentDialog.tsx
+src/components/ConsultationNotesDialog.tsx
+src/components/NavLink.tsx
+src/components/RecentPatients.tsx
+src/components/PageShell.tsx
+src/components/Sidebar.tsx
+
+# Unused pages (no backend / mock only)
+src/pages/admin/AdminStaff.tsx
+src/pages/admin/AdminAccessControl.tsx
+src/pages/doctor/DoctorPrescriptions.tsx
