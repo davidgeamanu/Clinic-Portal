@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clinic_notifications_db
+    username: postgres
+    password: ${DB_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 587
+    username: ${MAILTRAP_USERNAME:}
+    password: ${MAILTRAP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  email:
+    from: noreply@clinicportal.local
+    enabled: ${MAIL_ENABLED:false}
+  messaging:
+    appointment-booked-queue: clinic.appointment-booked.queue
+    appointment-status-changed-queue: clinic.appointment-status-changed.queue
+    consultation-note-created-queue: clinic.consultation-note-created.queue
