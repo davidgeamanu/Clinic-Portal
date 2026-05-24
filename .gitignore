@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE (root-level)
+.idea/
+*.iml
+.vscode/
+
+# Uploads (local file storage)
+uploads/
