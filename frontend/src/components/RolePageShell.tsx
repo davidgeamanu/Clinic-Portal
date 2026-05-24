@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 
 interface RolePageShellProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: ReactNode;
 }
 

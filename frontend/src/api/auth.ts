@@ -9,4 +9,7 @@ export const authApi = {
       api.post<AuthResponse>("/auth/register", data).then((r) => r.data),
 
   logout: () => api.post("/auth/logout"),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      api.patch("/auth/password", data),
 };

@@ -45,6 +45,19 @@ export function useRegister() {
   });
 }
 
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      authApi.changePassword(data),
+    onSuccess: () => {
+      toast.success("Password changed successfully.");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to change password."));
+    },
+  });
+}
+
 export function useLogout() {
   const { clearUser } = useRole();
   const navigate = useNavigate();

@@ -32,6 +32,7 @@ import DoctorPrescriptions from "./pages/doctor/DoctorPrescriptions";
 import DoctorNotes from "./pages/doctor/DoctorNotes";
 import DoctorConsultationNote from "./pages/doctor/DoctorConsultationNote";
 import DoctorNotifications from "./pages/doctor/DoctorNotifications";
+import DoctorSettings from "./pages/doctor/DoctorSettings";
 
 // Patient
 import PatientDashboard from "./pages/patient/PatientDashboard";
@@ -42,6 +43,7 @@ import PatientPrescriptions from "./pages/patient/PatientPrescriptions";
 import PatientBilling from "./pages/patient/PatientBilling";
 import PatientHealth from "./pages/patient/PatientHealth";
 import PatientNotifications from "./pages/patient/PatientNotifications";
+import PatientSettings from "./pages/patient/PatientSettings";
 
 const App = () => (
     <QueryClientProvider client={queryClient}>
@@ -77,6 +79,7 @@ const App = () => (
               <Route path="/doctor/notes" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><DoctorNotes /></ProtectedRoute>} />
               <Route path="/doctor/consultation/:appointmentId/:patientProfileId" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><DoctorConsultationNote /></ProtectedRoute>} />
               <Route path="/doctor/notifications" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><DoctorNotifications /></ProtectedRoute>} />
+              <Route path="/doctor/settings" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><DoctorSettings /></ProtectedRoute>} />
 
               {/* Patient */}
               <Route path="/patient" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientDashboard /></ProtectedRoute>} />
@@ -87,6 +90,7 @@ const App = () => (
               <Route path="/patient/billing" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientBilling /></ProtectedRoute>} />
               <Route path="/patient/health" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientHealth /></ProtectedRoute>} />
               <Route path="/patient/notifications" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientNotifications /></ProtectedRoute>} />
+              <Route path="/patient/settings" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientSettings /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -17,6 +17,9 @@ export const doctorApi = {
     getMyProfile: () =>
         api.get<DoctorProfileResponse>("/doctors/me").then((r) => r.data),
 
+    updateMyProfile: (data: { biography?: string; consultationFee?: number }) =>
+        api.put<DoctorProfileResponse>("/doctors/me", data).then((r) => r.data),
+
     getMyAppointments: () =>
         api.get<AppointmentResponse[]>("/appointments/my/doctor").then((r) => r.data),
 

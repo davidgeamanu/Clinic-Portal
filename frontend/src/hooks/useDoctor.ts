@@ -12,6 +12,21 @@ export function useDoctorProfile() {
   });
 }
 
+export function useUpdateDoctorProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { biography?: string; consultationFee?: number }) =>
+      doctorApi.updateMyProfile(data),
+    onSuccess: () => {
+      toast.success("Profile updated.");
+      qc.invalidateQueries({ queryKey: queryKeys.doctor.me() });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to update profile."));
+    },
+  });
+}
+
 export function useDoctorAppointments() {
   return useQuery({
     queryKey: queryKeys.appointments.mine(),
