@@ -290,7 +290,7 @@ export default function PatientHealth() {
 
   return (
     <RolePageShell title="Health Profile" subtitle="Your health summary and vital signs">
-      {/* Vitals — 2 rows of 3 */}
+      {/* Vitals - 2 rows of 3 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Vitals</h3>
@@ -299,9 +299,9 @@ export default function PatientHealth() {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <VitalCard label="Blood Pressure" icon={Activity} value="—" notImplemented />
-          <VitalCard label="Heart Rate"     icon={Heart}    value="—" notImplemented />
-          <VitalCard label="Blood Sugar"    icon={Droplets} value="—" notImplemented />
+          <VitalCard label="Blood Pressure" icon={Activity} value="-" notImplemented />
+          <VitalCard label="Heart Rate"     icon={Heart}    value="-" notImplemented />
+          <VitalCard label="Blood Sugar"    icon={Droplets} value="-" notImplemented />
           <VitalCard label="Weight"     icon={Weight} value={profile.weightKg != null ? String(profile.weightKg) : "—"} unit={profile.weightKg != null ? "kg" : undefined} />
           <VitalCard label="Height"     icon={Ruler}  value={profile.heightCm != null ? String(profile.heightCm) : "—"} unit={profile.heightCm != null ? "cm" : undefined} />
           <VitalCard label="Blood Type" icon={Droplet} value={formatBloodType(profile.bloodType)} />
@@ -398,7 +398,7 @@ export default function PatientHealth() {
         open={openDialog === "allergies"}
         onOpenChange={(o) => !o && setOpenDialog(null)}
         title="Edit Allergies"
-        description="Drug, food, environmental — anything you react to."
+        description="Drug, food, environmental - anything you react to."
         initialValue={profile.allergies ?? ""}
         onSave={(text) => handleSave({ allergies: text })}
         submitting={update.isPending}

@@ -94,9 +94,8 @@ export default function DoctorDashboard() {
   );
 
   const stats = useMemo(() => {
-    const distinctPatients = new Set(appointments.map((a) => a.patientId)).size;
     const completedToday = todayAppts.filter((a) => a.status === "COMPLETED").length;
-    return { todayCount: todayAppts.length, distinctPatients, completedToday };
+    return { todayCount: todayAppts.length, completedToday };
   }, [appointments, todayAppts]);
 
   const doctorName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : "Doctor";
@@ -105,7 +104,7 @@ export default function DoctorDashboard() {
       <RolePageShell title="Doctor Dashboard" subtitle={`Welcome back, ${doctorName}`}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard title="Today's Appointments" value={String(stats.todayCount)}       icon={Calendar}     iconBg="bg-primary/10 text-primary"  delay={0} />
-          <StatsCard title="My Patients"          value={String(stats.distinctPatients)} icon={Users}        iconBg="bg-info/10 text-info"         delay={0.05} />
+          <StatsCard title="My Patients"          value={String(profile?.completedPatientCount ?? 0)} icon={Users}        iconBg="bg-info/10 text-info"         delay={0.05} />
           <StatsCard title="Completed Today"      value={String(stats.completedToday)}   icon={CheckCircle2} iconBg="bg-success/10 text-success"   delay={0.1} />
           <StatsCard title="Avg. Consultation"    value={profile?.avgConsultationMinutes != null ? `${Math.round(profile.avgConsultationMinutes)} min` : "—"} icon={Clock} iconBg="bg-warning/10 text-warning" delay={0.15} />
         </div>

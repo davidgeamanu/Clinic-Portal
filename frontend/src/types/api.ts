@@ -75,6 +75,7 @@ export interface DoctorProfileResponse {
   roomNumber: string | null;
   specializations: SpecializationResponse[];
   avgConsultationMinutes: number | null;
+  completedPatientCount: number | null;
 }
 
 export interface AdminCreateDoctorRequest {
