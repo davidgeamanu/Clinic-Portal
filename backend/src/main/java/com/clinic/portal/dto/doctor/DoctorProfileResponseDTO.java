@@ -20,5 +20,6 @@ public record DoctorProfileResponseDTO(
         Long roomId,
         String roomNumber,
         List<SpecializationResponseDTO> specializations,
-        Double avgConsultationMinutes
+        Double avgConsultationMinutes,
+        Long completedPatientCount
 ) {}

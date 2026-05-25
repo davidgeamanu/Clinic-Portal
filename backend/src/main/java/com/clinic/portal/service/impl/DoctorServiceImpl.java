@@ -58,8 +58,9 @@ public class DoctorServiceImpl implements DoctorService {
     public DoctorProfileResponseDTO getProfile(Long userId) {
         DoctorProfile profile = findProfileByUserId(userId);
 
-        List<Appointment> timed = appointmentRepository.findByDoctorOrderByScheduledAtDesc(profile)
-                .stream()
+        List<Appointment> allAppointments = appointmentRepository.findByDoctorOrderByScheduledAtDesc(profile);
+
+        List<Appointment> timed = allAppointments.stream()
                 .filter(a -> a.getStartedAt() != null && a.getCompletedAt() != null)
                 .toList();
 
@@ -69,7 +70,13 @@ public class DoctorServiceImpl implements DoctorService {
                         .average()
                         .orElse(0);
 
-        return doctorProfileMapper.toDto(profile, avg);
+        long completedPatientCount = allAppointments.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
+                .map(a -> a.getPatient().getId())
+                .distinct()
+                .count();
+
+        return doctorProfileMapper.toDto(profile, avg, completedPatientCount);
     }
 
     @Override
