@@ -63,7 +63,7 @@ function VitalCard({
         )}
       </div>
       {notImplemented ? (
-        <p className="text-sm text-muted-foreground italic">Coming soon — no device integration yet.</p>
+        <p className="text-sm text-muted-foreground italic">Coming soon - no device integration yet.</p>
       ) : (
         <>
           <p className="text-2xl font-bold text-foreground">
@@ -299,9 +299,9 @@ export default function PatientHealth() {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <VitalCard label="Blood Pressure" icon={Activity} value="-" notImplemented />
-          <VitalCard label="Heart Rate"     icon={Heart}    value="-" notImplemented />
-          <VitalCard label="Blood Sugar"    icon={Droplets} value="-" notImplemented />
+          <VitalCard label="Blood Pressure" icon={Activity} value="—" notImplemented />
+          <VitalCard label="Heart Rate"     icon={Heart}    value="—" notImplemented />
+          <VitalCard label="Blood Sugar"    icon={Droplets} value="—" notImplemented />
           <VitalCard label="Weight"     icon={Weight} value={profile.weightKg != null ? String(profile.weightKg) : "—"} unit={profile.weightKg != null ? "kg" : undefined} />
           <VitalCard label="Height"     icon={Ruler}  value={profile.heightCm != null ? String(profile.heightCm) : "—"} unit={profile.heightCm != null ? "cm" : undefined} />
           <VitalCard label="Blood Type" icon={Droplet} value={formatBloodType(profile.bloodType)} />
