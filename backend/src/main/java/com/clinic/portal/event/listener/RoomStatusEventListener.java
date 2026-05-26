@@ -35,8 +35,8 @@ public class RoomStatusEventListener {
         Room room = appointment.getDoctor().getRoom();
         if (room == null) return;
 
-        boolean occupied = event.newStatus() == AppointmentStatus.CONFIRMED
-                || event.newStatus() == AppointmentStatus.IN_PROGRESS;
+        boolean occupied = //event.newStatus() == AppointmentStatus.CONFIRMED
+                 event.newStatus() == AppointmentStatus.IN_PROGRESS;
         room.setStatus(occupied ? RoomStatus.OCCUPIED : RoomStatus.FREE);
         roomRepository.save(room);
     }
