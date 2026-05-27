@@ -41,7 +41,7 @@ class NotificationEventConsumerTest {
         consumer.onBooked(event);
 
         verify(notificationService).dispatch(
-                eq(20L), eq("smith@test.com"),
+                eq(20L), eq("smith@test.com"), eq("Dr Smith"),
                 eq(NotificationType.APPOINTMENT_SCHEDULED),
                 any(NotificationContext.class), eq(1L)
         );
@@ -60,7 +60,7 @@ class NotificationEventConsumerTest {
         consumer.onStatusChanged(event);
 
         verify(notificationService).dispatch(
-                eq(10L), eq("john@test.com"),
+                eq(10L), eq("john@test.com"), eq("John"),
                 eq(NotificationType.APPOINTMENT_CONFIRMED),
                 any(), eq(1L)
         );
@@ -79,7 +79,7 @@ class NotificationEventConsumerTest {
         consumer.onStatusChanged(event);
 
         verify(notificationService).dispatch(
-                eq(20L), eq("smith@test.com"),
+                eq(20L), eq("smith@test.com"), eq("Dr Smith"),
                 eq(NotificationType.APPOINTMENT_CANCELLED),
                 any(), eq(1L)
         );
@@ -98,7 +98,7 @@ class NotificationEventConsumerTest {
         consumer.onStatusChanged(event);
 
         verify(notificationService).dispatch(
-                eq(10L), eq("john@test.com"),
+                eq(10L), eq("john@test.com"), eq("John"),
                 eq(NotificationType.APPOINTMENT_CANCELLED),
                 any(), eq(1L)
         );
@@ -131,7 +131,7 @@ class NotificationEventConsumerTest {
         consumer.onNoteCreated(event);
 
         verify(notificationService).dispatch(
-                eq(10L), eq("john@test.com"),
+                eq(10L), eq("john@test.com"), eq("John"),
                 eq(NotificationType.CONSULTATION_NOTE_ADDED),
                 any(), eq(50L)
         );

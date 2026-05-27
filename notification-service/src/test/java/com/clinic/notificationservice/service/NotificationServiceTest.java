@@ -49,12 +49,12 @@ class NotificationServiceTest {
     void dispatch_callsBothChannels() {
         var context = new NotificationContext(LocalDateTime.now(), "John", "Dr Smith");
 
-        notificationService.dispatch(1L, "john@test.com",
+        notificationService.dispatch(1L, "john@test.com", "John",
                 NotificationType.APPOINTMENT_SCHEDULED, context, 100L);
 
         verify(inAppChannel).send(eq(1L), anyString(),
                 eq(NotificationType.APPOINTMENT_SCHEDULED), eq(100L));
-        verify(emailChannel).send(eq("john@test.com"), anyString(),
+        verify(emailChannel).send(eq("john@test.com"), eq("John"), anyString(),
                 eq(NotificationType.APPOINTMENT_SCHEDULED));
     }
 
@@ -62,10 +62,10 @@ class NotificationServiceTest {
     void dispatch_emailFailureDoesNotBlockInApp() {
         var context = new NotificationContext(LocalDateTime.now(), "John", "Dr Smith");
         doThrow(new RuntimeException("SMTP down")).when(emailChannel)
-                .send(anyString(), anyString(), any());
+                .send(anyString(), anyString(), anyString(), any());
 
         assertDoesNotThrow(() ->
-                notificationService.dispatch(1L, "john@test.com",
+                notificationService.dispatch(1L, "john@test.com", "John",
                         NotificationType.APPOINTMENT_CONFIRMED, context, 100L));
 
         verify(inAppChannel).send(eq(1L), anyString(), any(), eq(100L));

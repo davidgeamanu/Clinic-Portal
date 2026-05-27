@@ -22,7 +22,7 @@ class NotificationMessageStrategyTest {
 
         String msg = strategy.build(context);
         assertTrue(msg.contains("John Doe"));
-        assertTrue(msg.contains("2026-06-01"));
+        assertTrue(msg.contains("June 1, 2026"));
     }
 
     @Test
@@ -32,7 +32,7 @@ class NotificationMessageStrategyTest {
 
         String msg = strategy.build(context);
         assertTrue(msg.contains("confirmed"));
-        assertTrue(msg.contains("2026-06-01"));
+        assertTrue(msg.contains("June 1, 2026"));
     }
 
     @Test

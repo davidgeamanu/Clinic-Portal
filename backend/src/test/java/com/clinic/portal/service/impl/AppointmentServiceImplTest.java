@@ -71,7 +71,7 @@ class AppointmentServiceImplTest {
         appointmentService.updateStatus(1L, dto, 10L);
 
         assertEquals(AppointmentStatus.CONFIRMED, appointment.getStatus());
-        verify(eventPublisher).publishEvent(any());
+        verify(eventPublisher).publishEvent(any(Object.class));
     }
 
     @Test

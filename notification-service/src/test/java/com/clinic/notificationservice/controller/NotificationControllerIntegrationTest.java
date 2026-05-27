@@ -64,9 +64,9 @@ class NotificationControllerIntegrationTest {
     }
 
     @Test
-    void getAll_unauthenticated_returns401() throws Exception {
+    void getAll_unauthenticated_returns403() throws Exception {
         mockMvc.perform(get("/notifications/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test
