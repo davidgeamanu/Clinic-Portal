@@ -47,17 +47,16 @@ export default function Login() {
                 <Activity className="h-8 w-8 text-primary-foreground" />
               </div>
               <span className="text-3xl font-bold text-sidebar-primary-foreground tracking-tight">
-              MediCare
+              Clinic Portal
             </span>
             </div>
             <h1 className="text-4xl font-bold text-sidebar-foreground leading-tight">
-              Hospital Management
+              Better care starts
               <br />
-              Made Simple
+              with better tools
             </h1>
             <p className="text-sidebar-muted text-lg max-w-md mx-auto">
-              Streamline patient care, manage appointments, and coordinate your
-              medical team — all in one platform.
+              Book appointments, manage consultations, and keep your team in sync, all in one place.
             </p>
           </motion.div>
         </div>
@@ -74,7 +73,7 @@ export default function Login() {
               <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
                 <Activity className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold text-foreground">MediCare</span>
+              <span className="text-2xl font-bold text-foreground">Clinic Portal</span>
             </div>
 
             <div>
