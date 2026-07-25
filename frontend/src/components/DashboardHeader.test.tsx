@@ -1,6 +1,18 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DashboardHeader } from "./DashboardHeader";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ReactElement } from "react";
+
+// DashboardHeader uses useQuery internally, so it needs a QueryClient
+function render(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return rtlRender(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
+}
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", () => ({
