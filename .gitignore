@@ -8,5 +8,24 @@ Desktop.ini
 *.iml
 .vscode/
 
-# Uploads (local file storage)
+# Uploads (local file storage — patient medical documents)
 uploads/
+
+# Environment & secrets
+# docker compose reads a root .env for DB_PASS / JWT_SECRET / API keys.
+# .env.example is the tracked template and must stay visible.
+.env
+.env.*
+!.env.example
+
+# Local dev launcher (machine-specific)
+start.bat
+
+# Build output (modules have their own ignores; these catch root-level strays)
+target/
+dist/
+node_modules/
+
+# Logs
+*.log
+logs/

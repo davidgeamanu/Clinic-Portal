@@ -19,8 +19,8 @@ import AdminAppointments from "./pages/admin/AdminAppointments";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminBuilding from "./pages/admin/AdminBuilding";
 import AdminReports from "./pages/admin/AdminReports";
-import AdminStaff from "./pages/admin/AdminStaff";
-import AdminAccessControl from "./pages/admin/AdminAccessControl";
+// AdminStaff / AdminAccessControl are mock-only and excluded from the repo
+// (see frontend/.gitignore) — their routes below stay commented out.
 
 // Doctor
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
@@ -28,7 +28,8 @@ import DoctorAppointments from "./pages/doctor/DoctorAppointments";
 import DoctorPatients from "./pages/doctor/DoctorPatients";
 import DoctorPatientRecord from "./pages/doctor/DoctorPatientRecord";
 import DoctorSchedule from "./pages/doctor/DoctorSchedule";
-import DoctorPrescriptions from "./pages/doctor/DoctorPrescriptions";
+// DoctorPrescriptions is mock-only and excluded from the repo (see
+// frontend/.gitignore) — its route below stays commented out.
 import DoctorNotes from "./pages/doctor/DoctorNotes";
 import DoctorConsultationNote from "./pages/doctor/DoctorConsultationNote";
 import DoctorNotifications from "./pages/doctor/DoctorNotifications";
@@ -39,8 +40,8 @@ import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientAppointments from "./pages/patient/PatientAppointments";
 import BookAppointment from "./pages/patient/BookAppointment";
 import PatientRecords from "./pages/patient/PatientRecords";
-import PatientPrescriptions from "./pages/patient/PatientPrescriptions";
-import PatientBilling from "./pages/patient/PatientBilling";
+// PatientPrescriptions / PatientBilling are mock-only — their routes below
+// stay commented out, matching the other unwired mock pages.
 import PatientHealth from "./pages/patient/PatientHealth";
 import PatientNotifications from "./pages/patient/PatientNotifications";
 import PatientSettings from "./pages/patient/PatientSettings";
@@ -86,8 +87,8 @@ const App = () => (
               <Route path="/patient/appointments" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientAppointments /></ProtectedRoute>} />
               <Route path="/patient/book" element={<ProtectedRoute allowedRoles={["PATIENT"]}><BookAppointment /></ProtectedRoute>} />
               <Route path="/patient/records" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientRecords /></ProtectedRoute>} />
-              <Route path="/patient/prescriptions" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientPrescriptions /></ProtectedRoute>} />
-              <Route path="/patient/billing" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientBilling /></ProtectedRoute>} />
+              {/*<Route path="/patient/prescriptions" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientPrescriptions /></ProtectedRoute>} /> */}
+              {/*<Route path="/patient/billing" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientBilling /></ProtectedRoute>} /> */}
               <Route path="/patient/health" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientHealth /></ProtectedRoute>} />
               <Route path="/patient/notifications" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientNotifications /></ProtectedRoute>} />
               <Route path="/patient/settings" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientSettings /></ProtectedRoute>} />
