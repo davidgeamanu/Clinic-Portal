@@ -54,6 +54,16 @@ class NotificationMessageStrategyTest {
     }
 
     @Test
+    void appointmentNoShow_containsMissed() {
+        var strategy = new AppointmentNoShowMessage();
+        assertEquals(NotificationType.APPOINTMENT_NO_SHOW, strategy.type());
+
+        String msg = strategy.build(context);
+        assertTrue(msg.contains("missed"));
+        assertTrue(msg.contains("June 1, 2026"));
+    }
+
+    @Test
     void consultationNoteAdded_containsDate() {
         var strategy = new ConsultationNoteAddedMessage();
         assertEquals(NotificationType.CONSULTATION_NOTE_ADDED, strategy.type());
@@ -78,6 +88,7 @@ class NotificationMessageStrategyTest {
                 new AppointmentConfirmedMessage(),
                 new AppointmentStartedMessage(),
                 new AppointmentCancelledMessage(),
+                new AppointmentNoShowMessage(),
                 new ConsultationNoteAddedMessage(),
                 new GeneralMessage()
         ));

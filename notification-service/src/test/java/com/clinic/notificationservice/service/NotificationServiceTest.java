@@ -7,6 +7,7 @@ import com.clinic.notificationservice.dto.NotificationResponseDTO;
 import com.clinic.notificationservice.model.Notification;
 import com.clinic.notificationservice.model.NotificationType;
 import com.clinic.notificationservice.repository.NotificationRepository;
+import com.clinic.notificationservice.sse.SseEmitterRegistry;
 import com.clinic.notificationservice.strategy.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class NotificationServiceTest {
     @Mock private NotificationMapper notificationMapper;
     @Mock private InAppChannel inAppChannel;
     @Mock private EmailChannel emailChannel;
+    @Mock private SseEmitterRegistry sseEmitterRegistry;
 
     private NotificationService notificationService;
 
@@ -38,22 +40,30 @@ class NotificationServiceTest {
         var registry = new NotificationMessageStrategyRegistry(List.of(
                 new AppointmentScheduledMessage(), new AppointmentConfirmedMessage(),
                 new AppointmentStartedMessage(), new AppointmentCancelledMessage(),
+                new AppointmentNoShowMessage(),
                 new ConsultationNoteAddedMessage(), new GeneralMessage()
         ));
         notificationService = new NotificationService(
-                notificationRepository, notificationMapper, registry, inAppChannel, emailChannel
+                notificationRepository, notificationMapper, registry, inAppChannel, emailChannel,
+                sseEmitterRegistry
         );
     }
 
     @Test
-    void dispatch_callsBothChannels() {
+    void dispatch_callsAllChannels() {
         var context = new NotificationContext(LocalDateTime.now(), "John", "Dr Smith");
+        Notification saved = Notification.builder().userId(1L).message("m")
+                .type(NotificationType.APPOINTMENT_SCHEDULED).build();
+        var dto = new NotificationResponseDTO(1L, "m", NotificationType.APPOINTMENT_SCHEDULED, false, null, null);
+        when(inAppChannel.send(eq(1L), anyString(), any(), eq(100L))).thenReturn(saved);
+        when(notificationMapper.toDto(saved)).thenReturn(dto);
 
         notificationService.dispatch(1L, "john@test.com", "John",
                 NotificationType.APPOINTMENT_SCHEDULED, context, 100L);
 
         verify(inAppChannel).send(eq(1L), anyString(),
                 eq(NotificationType.APPOINTMENT_SCHEDULED), eq(100L));
+        verify(sseEmitterRegistry).push(1L, dto);
         verify(emailChannel).send(eq("john@test.com"), eq("John"), anyString(),
                 eq(NotificationType.APPOINTMENT_SCHEDULED));
     }

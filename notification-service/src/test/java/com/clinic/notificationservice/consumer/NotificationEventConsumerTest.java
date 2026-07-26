@@ -5,6 +5,8 @@ import com.clinic.notificationservice.event.AppointmentStatus;
 import com.clinic.notificationservice.event.AppointmentStatusChangedEvent;
 import com.clinic.notificationservice.event.ConsultationNoteCreatedEvent;
 import com.clinic.notificationservice.model.NotificationType;
+import com.clinic.notificationservice.model.ProcessedEvent;
+import com.clinic.notificationservice.repository.ProcessedEventRepository;
 import com.clinic.notificationservice.service.NotificationService;
 import com.clinic.notificationservice.strategy.NotificationContext;
 import org.junit.jupiter.api.Test;
@@ -25,26 +27,50 @@ import static org.mockito.Mockito.*;
 class NotificationEventConsumerTest {
 
     @Mock private NotificationService notificationService;
+    @Mock private ProcessedEventRepository processedEventRepository;
     @InjectMocks private NotificationEventConsumer consumer;
 
     private final LocalDateTime scheduledAt = LocalDateTime.of(2026, 6, 1, 10, 0);
 
     @Test
-    void onBooked_dispatchesToDoctor() {
+    void onBooked_dispatchesToDoctor_andRecordsEventId() {
+        UUID eventId = UUID.randomUUID();
         var event = new AppointmentBookedEvent(
-                UUID.randomUUID(), 1L,
+                eventId, 1L,
                 10L, "John Patient", "john@test.com",
                 20L, "Dr Smith", "smith@test.com",
                 scheduledAt
         );
 
-        consumer.onBooked(event);
+        consumer.onBooked(event, "corr-1");
 
         verify(notificationService).dispatch(
                 eq(20L), eq("smith@test.com"), eq("Dr Smith"),
                 eq(NotificationType.APPOINTMENT_SCHEDULED),
                 any(NotificationContext.class), eq(1L)
         );
+
+        ArgumentCaptor<ProcessedEvent> captor = ArgumentCaptor.forClass(ProcessedEvent.class);
+        verify(processedEventRepository).save(captor.capture());
+        assertEquals(eventId, captor.getValue().getEventId());
+    }
+
+    @Test
+    void onBooked_duplicateEventId_isSkipped() {
+        UUID eventId = UUID.randomUUID();
+        when(processedEventRepository.existsByEventId(eventId)).thenReturn(true);
+
+        var event = new AppointmentBookedEvent(
+                eventId, 1L,
+                10L, "John Patient", "john@test.com",
+                20L, "Dr Smith", "smith@test.com",
+                scheduledAt
+        );
+
+        consumer.onBooked(event, null);
+
+        verifyNoInteractions(notificationService);
+        verify(processedEventRepository, never()).save(any());
     }
 
     @Test
@@ -57,7 +83,7 @@ class NotificationEventConsumerTest {
                 20L, scheduledAt
         );
 
-        consumer.onStatusChanged(event);
+        consumer.onStatusChanged(event, null);
 
         verify(notificationService).dispatch(
                 eq(10L), eq("john@test.com"), eq("John"),
@@ -76,7 +102,7 @@ class NotificationEventConsumerTest {
                 10L, scheduledAt  // patient is the requester
         );
 
-        consumer.onStatusChanged(event);
+        consumer.onStatusChanged(event, null);
 
         verify(notificationService).dispatch(
                 eq(20L), eq("smith@test.com"), eq("Dr Smith"),
@@ -95,11 +121,30 @@ class NotificationEventConsumerTest {
                 20L, scheduledAt  // doctor is the requester
         );
 
-        consumer.onStatusChanged(event);
+        consumer.onStatusChanged(event, null);
 
         verify(notificationService).dispatch(
                 eq(10L), eq("john@test.com"), eq("John"),
                 eq(NotificationType.APPOINTMENT_CANCELLED),
+                any(), eq(1L)
+        );
+    }
+
+    @Test
+    void onStatusChanged_noShow_dispatchesToPatient() {
+        var event = new AppointmentStatusChangedEvent(
+                UUID.randomUUID(), 1L,
+                AppointmentStatus.SCHEDULED, AppointmentStatus.NO_SHOW,
+                10L, "John", "john@test.com",
+                20L, "Dr Smith", "smith@test.com",
+                20L, scheduledAt
+        );
+
+        consumer.onStatusChanged(event, null);
+
+        verify(notificationService).dispatch(
+                eq(10L), eq("john@test.com"), eq("John"),
+                eq(NotificationType.APPOINTMENT_NO_SHOW),
                 any(), eq(1L)
         );
     }
@@ -114,7 +159,7 @@ class NotificationEventConsumerTest {
                 20L, scheduledAt
         );
 
-        consumer.onStatusChanged(event);
+        consumer.onStatusChanged(event, null);
 
         verifyNoInteractions(notificationService);
     }
@@ -128,7 +173,7 @@ class NotificationEventConsumerTest {
                 scheduledAt
         );
 
-        consumer.onNoteCreated(event);
+        consumer.onNoteCreated(event, null);
 
         verify(notificationService).dispatch(
                 eq(10L), eq("john@test.com"), eq("John"),

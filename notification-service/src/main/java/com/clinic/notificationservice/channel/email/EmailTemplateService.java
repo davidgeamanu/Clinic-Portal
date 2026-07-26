@@ -12,6 +12,7 @@ public class EmailTemplateService {
             case APPOINTMENT_CONFIRMED -> "Appointment Confirmed";
             case APPOINTMENT_STARTED -> "Appointment Started";
             case APPOINTMENT_CANCELLED -> "Appointment Cancelled";
+            case APPOINTMENT_NO_SHOW -> "Missed Appointment";
             case CONSULTATION_NOTE_ADDED -> "Consultation Notes Available";
             case GENERAL -> "Clinic Portal Notification";
         };
@@ -23,6 +24,7 @@ public class EmailTemplateService {
             case APPOINTMENT_CONFIRMED -> "#16a34a";
             case APPOINTMENT_STARTED -> "#7c3aed";
             case APPOINTMENT_CANCELLED -> "#dc2626";
+            case APPOINTMENT_NO_SHOW -> "#d97706";
             case CONSULTATION_NOTE_ADDED -> "#0891b2";
             case GENERAL -> "#6b7280";
         };

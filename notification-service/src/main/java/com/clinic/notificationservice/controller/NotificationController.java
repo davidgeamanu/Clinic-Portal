@@ -3,6 +3,7 @@ package com.clinic.notificationservice.controller;
 import com.clinic.notificationservice.dto.NotificationResponseDTO;
 import com.clinic.notificationservice.security.UserDetailsImpl;
 import com.clinic.notificationservice.service.NotificationService;
+import com.clinic.notificationservice.sse.SseEmitterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -24,6 +26,16 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final SseEmitterRegistry sseEmitterRegistry;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Subscribe to real-time notifications",
+            description = "Server-Sent Events stream. Emits a 'notification' event with the notification JSON whenever one is created for the current user.")
+    @ApiResponse(responseCode = "200", description = "Stream opened")
+    public SseEmitter stream(@AuthenticationPrincipal UserDetailsImpl user) {
+        return sseEmitterRegistry.subscribe(user.getId());
+    }
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")

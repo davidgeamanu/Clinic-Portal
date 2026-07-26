@@ -14,13 +14,13 @@ public class InAppChannel {
     private final NotificationRepository notificationRepository;
 
     @Transactional
-    public void send(Long userId, String message, NotificationType type, Long relatedEntityId) {
+    public Notification send(Long userId, String message, NotificationType type, Long relatedEntityId) {
         Notification notification = Notification.builder()
                 .userId(userId)
                 .message(message)
                 .type(type)
                 .relatedEntityId(relatedEntityId)
                 .build();
-        notificationRepository.save(notification);
+        return notificationRepository.save(notification);
     }
 }
