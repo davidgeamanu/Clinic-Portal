@@ -7,7 +7,7 @@ import java.util.UUID;
  * Fat event published to RabbitMQ when a doctor records a consultation note.
  * Notifies the patient that their notes are available.
  */
-public record ConsultationNoteCreatedEvent(
+public record ConsultationNoteCreatedMessage(
         UUID eventId,
         Long noteId,
         Long appointmentId,
