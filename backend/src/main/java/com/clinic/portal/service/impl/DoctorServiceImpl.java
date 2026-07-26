@@ -1,16 +1,21 @@
 package com.clinic.portal.service.impl;
 
+import com.clinic.portal.dto.doctor.AvailabilityWindowDTO;
+import com.clinic.portal.dto.doctor.AvailableSlotDTO;
 import com.clinic.portal.dto.doctor.BookedSlotDTO;
 import com.clinic.portal.dto.doctor.DoctorPatientListItemDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
+import com.clinic.portal.dto.doctor.DoctorReviewDTO;
 import com.clinic.portal.dto.doctor.PatientSummaryDTO;
 import com.clinic.portal.dto.doctor.RecentPatientDTO;
+import com.clinic.portal.exception.BusinessException;
 import com.clinic.portal.exception.DataNotFoundException;
 import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.mapper.DoctorProfileMapper;
 import com.clinic.portal.model.Appointment;
 import com.clinic.portal.model.ConsultationNote;
+import com.clinic.portal.model.DoctorAvailability;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.PatientProfile;
 import com.clinic.portal.model.Specialization;
@@ -18,6 +23,7 @@ import com.clinic.portal.model.User;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.repository.AppointmentRepository;
 import com.clinic.portal.repository.ConsultationNoteRepository;
+import com.clinic.portal.repository.DoctorAvailabilityRepository;
 import com.clinic.portal.repository.DoctorProfileRepository;
 import com.clinic.portal.repository.PatientProfileRepository;
 import com.clinic.portal.repository.SpecializationRepository;
@@ -32,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -52,6 +59,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final SpecializationRepository specializationRepository;
     private final AppointmentRepository appointmentRepository;
     private final ConsultationNoteRepository consultationNoteRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final DoctorProfileMapper doctorProfileMapper;
 
     @Override
@@ -160,11 +168,12 @@ public class DoctorServiceImpl implements DoctorService {
     public List<DoctorPatientListItemDTO> getDoctorPatients(Long doctorUserId) {
         DoctorProfile doctor = findProfileByUserId(doctorUserId);
 
-        // All non-cancelled appointments, newest first
+        // All non-cancelled, non-no-show appointments, newest first
         List<Appointment> appointments = appointmentRepository
                 .findByDoctorOrderByScheduledAtDesc(doctor)
                 .stream()
-                .filter(a -> a.getStatus() != AppointmentStatus.CANCELLED)
+                .filter(a -> a.getStatus() != AppointmentStatus.CANCELLED
+                        && a.getStatus() != AppointmentStatus.NO_SHOW)
                 .toList();
 
         // First occurrence per patient = most recent non-cancelled appointment (LinkedHashMap preserves order)
@@ -261,11 +270,138 @@ public class DoctorServiceImpl implements DoctorService {
         LocalDateTime dayEnd = date.atTime(LocalTime.MAX);
 
         return appointmentRepository
-                .findByDoctor_IdAndScheduledAtBetweenAndStatusNot(
-                        doctorProfileId, dayStart, dayEnd, AppointmentStatus.CANCELLED)
+                .findByDoctor_IdAndScheduledAtBetweenAndStatusNotIn(
+                        doctorProfileId, dayStart, dayEnd,
+                        EnumSet.of(AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW))
                 .stream()
                 .map(a -> new BookedSlotDTO(a.getScheduledAt(), a.getDurationMinutes()))
                 .toList();
+    }
+
+    @Override
+    public List<AvailabilityWindowDTO> getMyAvailability(Long doctorUserId) {
+        DoctorProfile doctor = findProfileByUserId(doctorUserId);
+        return getAvailability(doctor.getId());
+    }
+
+    @Override
+    @Transactional
+    public List<AvailabilityWindowDTO> updateMyAvailability(Long doctorUserId, List<AvailabilityWindowDTO> windows) {
+        DoctorProfile doctor = findProfileByUserId(doctorUserId);
+        validateWindows(windows);
+
+        // Replace-all semantics: the submitted list is the complete weekly schedule
+        doctorAvailabilityRepository.deleteByDoctor(doctor);
+        doctorAvailabilityRepository.flush();
+
+        List<DoctorAvailability> entities = windows.stream()
+                .map(w -> DoctorAvailability.builder()
+                        .doctor(doctor)
+                        .dayOfWeek(w.dayOfWeek())
+                        .startTime(w.startTime())
+                        .endTime(w.endTime())
+                        .build())
+                .toList();
+        doctorAvailabilityRepository.saveAll(entities);
+
+        return getAvailability(doctor.getId());
+    }
+
+    @Override
+    public List<AvailabilityWindowDTO> getAvailability(Long doctorProfileId) {
+        return doctorAvailabilityRepository
+                .findByDoctor_IdOrderByDayOfWeekAscStartTimeAsc(doctorProfileId)
+                .stream()
+                .map(a -> new AvailabilityWindowDTO(a.getDayOfWeek(), a.getStartTime(), a.getEndTime()))
+                .toList();
+    }
+
+    @Override
+    public List<AvailableSlotDTO> getAvailableSlots(Long doctorProfileId, LocalDate date, int durationMinutes) {
+        if (!doctorProfileRepository.existsById(doctorProfileId))
+            throw new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND);
+
+        List<DoctorAvailability> windows = doctorAvailabilityRepository
+                .findByDoctor_IdAndDayOfWeekOrderByStartTimeAsc(doctorProfileId, date.getDayOfWeek());
+        if (windows.isEmpty()) return List.of();
+
+        List<Appointment> booked = appointmentRepository
+                .findByDoctor_IdAndScheduledAtBetweenAndStatusNotIn(
+                        doctorProfileId, date.atStartOfDay(), date.atTime(LocalTime.MAX),
+                        EnumSet.of(AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW));
+
+        LocalDateTime now = LocalDateTime.now();
+        List<AvailableSlotDTO> slots = new ArrayList<>();
+
+        for (DoctorAvailability window : windows) {
+            LocalDateTime cursor = date.atTime(window.getStartTime());
+            LocalDateTime windowEnd = date.atTime(window.getEndTime());
+
+            while (!cursor.plusMinutes(durationMinutes).isAfter(windowEnd)) {
+                LocalDateTime slotEnd = cursor.plusMinutes(durationMinutes);
+                LocalDateTime slotStart = cursor;
+
+                boolean inPast = !slotStart.isAfter(now);
+                boolean clashes = booked.stream().anyMatch(a ->
+                        a.getScheduledAt().isBefore(slotEnd)
+                                && a.getScheduledAt().plusMinutes(a.getDurationMinutes()).isAfter(slotStart));
+
+                if (!inPast && !clashes) {
+                    slots.add(new AvailableSlotDTO(slotStart, durationMinutes));
+                }
+                cursor = cursor.plusMinutes(durationMinutes);
+            }
+        }
+
+        return slots;
+    }
+
+    @Override
+    public List<DoctorReviewDTO> getReviews(Long doctorProfileId) {
+        if (!doctorProfileRepository.existsById(doctorProfileId))
+            throw new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND);
+
+        return appointmentRepository
+                .findByDoctor_IdAndRatingIsNotNullOrderByScheduledAtDesc(doctorProfileId)
+                .stream()
+                .map(a -> {
+                    User patientUser = a.getPatient().getUser();
+                    String lastInitial = patientUser.getLastName().isEmpty()
+                            ? "" : " " + patientUser.getLastName().charAt(0) + ".";
+                    return new DoctorReviewDTO(
+                            a.getRating(),
+                            a.getReview(),
+                            patientUser.getFirstName() + lastInitial,
+                            a.getScheduledAt().toLocalDate().toString()
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public List<DoctorReviewDTO> getMyReviews(Long doctorUserId) {
+        DoctorProfile doctor = findProfileByUserId(doctorUserId);
+        return getReviews(doctor.getId());
+    }
+
+    private void validateWindows(List<AvailabilityWindowDTO> windows) {
+        for (AvailabilityWindowDTO window : windows) {
+            if (!window.startTime().isBefore(window.endTime())) {
+                throw new BusinessException(ExceptionCode.INVALID_AVAILABILITY_WINDOW);
+            }
+        }
+        // No two windows on the same day may overlap
+        for (int i = 0; i < windows.size(); i++) {
+            for (int j = i + 1; j < windows.size(); j++) {
+                AvailabilityWindowDTO a = windows.get(i);
+                AvailabilityWindowDTO b = windows.get(j);
+                if (a.dayOfWeek() == b.dayOfWeek()
+                        && a.startTime().isBefore(b.endTime())
+                        && b.startTime().isBefore(a.endTime())) {
+                    throw new BusinessException(ExceptionCode.INVALID_AVAILABILITY_WINDOW);
+                }
+            }
+        }
     }
 
     private DoctorProfile findProfileByUserId(Long userId) {

@@ -19,7 +19,8 @@ class AppointmentStateRegistryTest {
                 new ConfirmedState(),
                 new InProgressState(),
                 new CompletedState(),
-                new CancelledState()
+                new CancelledState(),
+                new NoShowState()
         );
         registry = new AppointmentStateRegistry(states);
     }

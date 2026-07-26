@@ -13,6 +13,8 @@ import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
 import com.clinic.portal.exception.ExceptionBody;
+import com.clinic.portal.model.enums.AppointmentMode;
+import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.model.enums.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +23,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,12 +89,17 @@ public interface AdminController {
     RoomResponseDTO updateRoom(@PathVariable Long roomId, @RequestBody @Valid RoomUpdateDTO dto);
 
     @GetMapping("/patients")
-    @Operation(summary = "Get all patients with profile data")
-    @ApiResponse(responseCode = "200", description = "Patients retrieved",
+    @Operation(summary = "Get patients (paginated)",
+            description = "Returns one page of patients with profile data. Filtering is applied across the whole "
+                    + "table, not just the returned page. Query params: search (name or email), active, page, size, sort.")
+    @ApiResponse(responseCode = "200", description = "Patients page retrieved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = AdminPatientDTO.class)))
     @ResponseStatus(HttpStatus.OK)
-    List<AdminPatientDTO> getAdminPatients();
+    PagedModel<AdminPatientDTO> getAdminPatients(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false) Boolean active,
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable);
 
     @GetMapping("/patients/{patientProfileId}/appointments")
     @Operation(summary = "Get appointments for a specific patient")
@@ -182,12 +194,19 @@ public interface AdminController {
     List<SpecializationResponseDTO> getAllSpecializations();
 
     @GetMapping("/appointments")
-    @Operation(summary = "Get all appointments")
-    @ApiResponse(responseCode = "200", description = "Appointments retrieved",
+    @Operation(summary = "Get appointments (paginated)",
+            description = "Returns one page of appointments. Filtering is applied across the whole table, not just "
+                    + "the returned page. Query params: search (patient or doctor name), status, mode, page, size, "
+                    + "sort (default: scheduledAt,desc).")
+    @ApiResponse(responseCode = "200", description = "Appointments page retrieved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = AppointmentResponseDTO.class)))
     @ResponseStatus(HttpStatus.OK)
-    List<AppointmentResponseDTO> getAllAppointments();
+    PagedModel<AppointmentResponseDTO> getAllAppointments(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false) AppointmentStatus status,
+            @RequestParam(required = false) AppointmentMode mode,
+            @ParameterObject @PageableDefault(size = 20, sort = "scheduledAt", direction = Sort.Direction.DESC) Pageable pageable);
 
     @PatchMapping("/appointments/{appointmentId}/cancel")
     @Operation(summary = "Cancel appointment")

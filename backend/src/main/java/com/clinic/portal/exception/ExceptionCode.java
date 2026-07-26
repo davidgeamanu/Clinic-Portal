@@ -33,6 +33,9 @@ public enum ExceptionCode {
     APPOINTMENT_NOT_YET_STARTABLE("This appointment cannot be started before its scheduled time.", "ERR_6004"),
     APPOINTMENT_NOT_COMPLETED("Only completed appointments can be rated.", "ERR_6005"),
     APPOINTMENT_ALREADY_RATED("This appointment has already been rated.", "ERR_6006"),
+    APPOINTMENT_OUTSIDE_WORKING_HOURS("The selected time is outside the doctor's working hours.", "ERR_6007"),
+    INVALID_AVAILABILITY_WINDOW("Availability windows must have a start before their end and must not overlap.", "ERR_6008"),
+    APPOINTMENT_NOT_YET_MISSED("An appointment cannot be marked as a no-show before its scheduled time.", "ERR_6009"),
 
     // Consultation & Documents
     CONSULTATION_NOTE_NOT_FOUND("Consultation note not found.", "ERR_7001"),

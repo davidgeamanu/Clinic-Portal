@@ -63,8 +63,10 @@ public class AuthorizationExpressions {
         if (!isParticipant)
             return false;
 
-        // Patients may cancel their own appointment but cannot confirm it
-        if (hasRole(authentication, ROLE_PATIENT) && newStatus == AppointmentStatus.CONFIRMED)
+        // Patients may cancel their own appointment but cannot confirm it,
+        // nor mark themselves as a no-show
+        if (hasRole(authentication, ROLE_PATIENT)
+                && (newStatus == AppointmentStatus.CONFIRMED || newStatus == AppointmentStatus.NO_SHOW))
             return false;
 
         return true;

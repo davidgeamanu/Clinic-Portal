@@ -1,9 +1,12 @@
 package com.clinic.portal.controller.doctor;
 
+import com.clinic.portal.dto.doctor.AvailabilityWindowDTO;
+import com.clinic.portal.dto.doctor.AvailableSlotDTO;
 import com.clinic.portal.dto.doctor.BookedSlotDTO;
 import com.clinic.portal.dto.doctor.DoctorPatientListItemDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
+import com.clinic.portal.dto.doctor.DoctorReviewDTO;
 import com.clinic.portal.dto.doctor.PatientSummaryDTO;
 import com.clinic.portal.dto.doctor.RecentPatientDTO;
 import com.clinic.portal.controller.AuthenticatedController;
@@ -86,5 +89,47 @@ public class DoctorControllerImpl implements DoctorController, AuthenticatedCont
     public DoctorProfileResponseDTO updateMyProfile(DoctorProfileUpdateDTO dto) {
         log.info("[DOCTOR] Updating profile for user: {}", currentUser().getId());
         return doctorService.updateProfile(currentUser().getId(), dto);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('DOCTOR')")
+    public List<AvailabilityWindowDTO> getMyAvailability() {
+        log.info("[DOCTOR] Getting availability for user: {}", currentUser().getId());
+        return doctorService.getMyAvailability(currentUser().getId());
+    }
+
+    @Override
+    @PreAuthorize("hasRole('DOCTOR')")
+    public List<AvailabilityWindowDTO> updateMyAvailability(List<AvailabilityWindowDTO> windows) {
+        log.info("[DOCTOR] Updating availability for user: {} ({} windows)", currentUser().getId(), windows.size());
+        return doctorService.updateMyAvailability(currentUser().getId(), windows);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public List<AvailabilityWindowDTO> getDoctorAvailability(Long profileId) {
+        log.info("[DOCTOR] Getting availability for doctor profile: {}", profileId);
+        return doctorService.getAvailability(profileId);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public List<DoctorReviewDTO> getDoctorReviews(Long profileId) {
+        log.info("[DOCTOR] Getting reviews for doctor profile: {}", profileId);
+        return doctorService.getReviews(profileId);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('DOCTOR')")
+    public List<DoctorReviewDTO> getMyReviews() {
+        log.info("[DOCTOR] Getting own reviews for user: {}", currentUser().getId());
+        return doctorService.getMyReviews(currentUser().getId());
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public List<AvailableSlotDTO> getAvailableSlots(Long profileId, LocalDate date, int durationMinutes) {
+        log.info("[DOCTOR] Getting available slots for doctor {} on {} ({}min)", profileId, date, durationMinutes);
+        return doctorService.getAvailableSlots(profileId, date, durationMinutes);
     }
 }

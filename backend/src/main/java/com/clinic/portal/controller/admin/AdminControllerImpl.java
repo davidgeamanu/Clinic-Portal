@@ -12,10 +12,14 @@ import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
+import com.clinic.portal.model.enums.AppointmentMode;
+import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.model.enums.Role;
 import com.clinic.portal.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,9 +66,10 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
-    public List<AdminPatientDTO> getAdminPatients() {
-        log.info("[ADMIN] Getting all patients");
-        return adminService.getAdminPatients();
+    public PagedModel<AdminPatientDTO> getAdminPatients(String search, Boolean active, Pageable pageable) {
+        log.info("[ADMIN] Getting patients page {} (size {}, search '{}', active {})",
+                pageable.getPageNumber(), pageable.getPageSize(), search, active);
+        return new PagedModel<>(adminService.getAdminPatients(search, active, pageable));
     }
 
     @Override
@@ -116,9 +121,11 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
-    public List<AppointmentResponseDTO> getAllAppointments() {
-        log.info("[ADMIN] Getting all appointments");
-        return adminService.getAllAppointments();
+    public PagedModel<AppointmentResponseDTO> getAllAppointments(String search, AppointmentStatus status,
+                                                                 AppointmentMode mode, Pageable pageable) {
+        log.info("[ADMIN] Getting appointments page {} (size {}, search '{}', status {}, mode {})",
+                pageable.getPageNumber(), pageable.getPageSize(), search, status, mode);
+        return new PagedModel<>(adminService.getAllAppointments(search, status, mode, pageable));
     }
 
     @Override

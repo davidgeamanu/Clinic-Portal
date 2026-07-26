@@ -12,7 +12,11 @@ import com.clinic.portal.dto.doctor.AdminCreateDoctorDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.specialization.SpecializationResponseDTO;
 import com.clinic.portal.dto.user.UserResponseDTO;
+import com.clinic.portal.model.enums.AppointmentMode;
+import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.model.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -28,7 +32,7 @@ public interface AdminService {
 
     RoomResponseDTO updateRoom(Long roomId, RoomUpdateDTO dto);
 
-    List<AdminPatientDTO> getAdminPatients();
+    Page<AdminPatientDTO> getAdminPatients(String search, Boolean active, Pageable pageable);
 
     List<AppointmentResponseDTO> getPatientAppointments(Long patientProfileId);
 
@@ -46,7 +50,8 @@ public interface AdminService {
 
     List<SpecializationResponseDTO> getAllSpecializations();
 
-    List<AppointmentResponseDTO> getAllAppointments();
+    Page<AppointmentResponseDTO> getAllAppointments(String search, AppointmentStatus status,
+                                                    AppointmentMode mode, Pageable pageable);
 
     AppointmentResponseDTO cancelAppointment(Long appointmentId);
 }

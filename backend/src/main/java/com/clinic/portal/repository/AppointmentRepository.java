@@ -3,18 +3,44 @@ package com.clinic.portal.repository;
 import com.clinic.portal.model.Appointment;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.PatientProfile;
+import com.clinic.portal.model.enums.AppointmentMode;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.repository.projection.StaleAppointmentView;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    /**
+     * Paginated search for the admin appointments table. The filters belong in
+     * the query, not in the caller — filtering a single page client-side would
+     * silently miss matches on every other page.
+     *
+     * An empty {@code search} matches everything; null {@code status}/{@code mode}
+     * mean "any".
+     */
+    @Query("""
+            SELECT a FROM Appointment a
+            JOIN a.patient p JOIN p.user pu
+            JOIN a.doctor d JOIN d.user du
+            WHERE (LOWER(CONCAT(pu.firstName, ' ', pu.lastName)) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(CONCAT(du.firstName, ' ', du.lastName)) LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (:status IS NULL OR a.status = :status)
+              AND (:mode IS NULL OR a.mode = :mode)
+            """)
+    Page<Appointment> search(@Param("search") String search,
+                             @Param("status") AppointmentStatus status,
+                             @Param("mode") AppointmentMode mode,
+                             Pageable pageable);
 
     List<Appointment> findByPatientOrderByScheduledAtDesc(PatientProfile patient);
 
@@ -50,8 +76,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByDoctorAndStatusOrderByScheduledAtDesc(DoctorProfile doctor, AppointmentStatus status);
 
-    List<Appointment> findByDoctor_IdAndScheduledAtBetweenAndStatusNot(
-            Long doctorId, LocalDateTime from, LocalDateTime to, AppointmentStatus excludedStatus);
+    List<Appointment> findByDoctor_IdAndScheduledAtBetweenAndStatusNotIn(
+            Long doctorId, LocalDateTime from, LocalDateTime to, Collection<AppointmentStatus> excludedStatuses);
+
+    @Query("SELECT AVG(a.rating) FROM Appointment a WHERE a.doctor = :doctor AND a.rating IS NOT NULL")
+    Double findAverageRatingForDoctor(@Param("doctor") DoctorProfile doctor);
+
+    List<Appointment> findByDoctor_IdAndRatingIsNotNullOrderByScheduledAtDesc(Long doctorProfileId);
 
     boolean existsByDoctorAndPatient(DoctorProfile doctor, PatientProfile patient);
 

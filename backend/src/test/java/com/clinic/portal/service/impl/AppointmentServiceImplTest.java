@@ -7,6 +7,7 @@ import com.clinic.portal.mapper.AppointmentMapper;
 import com.clinic.portal.model.Appointment;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.repository.AppointmentRepository;
+import com.clinic.portal.repository.DoctorAvailabilityRepository;
 import com.clinic.portal.repository.DoctorProfileRepository;
 import com.clinic.portal.repository.PatientProfileRepository;
 import com.clinic.portal.repository.UserRepository;
@@ -34,6 +35,7 @@ class AppointmentServiceImplTest {
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private PatientProfileRepository patientProfileRepository;
     @Mock private DoctorProfileRepository doctorProfileRepository;
+    @Mock private DoctorAvailabilityRepository doctorAvailabilityRepository;
     @Mock private UserRepository userRepository;
     @Mock private AppointmentMapper appointmentMapper;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -47,11 +49,12 @@ class AppointmentServiceImplTest {
     void setUp() {
         stateRegistry = new AppointmentStateRegistry(List.of(
                 new ScheduledState(), new ConfirmedState(),
-                new InProgressState(), new CompletedState(), new CancelledState()
+                new InProgressState(), new CompletedState(), new CancelledState(),
+                new NoShowState()
         ));
         appointmentService = new AppointmentServiceImpl(
                 appointmentRepository, patientProfileRepository, doctorProfileRepository,
-                userRepository, appointmentMapper, eventPublisher, stateRegistry
+                doctorAvailabilityRepository, userRepository, appointmentMapper, eventPublisher, stateRegistry
         );
     }
 

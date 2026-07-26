@@ -32,9 +32,53 @@ class AppointmentStateTest {
         }
 
         @Test
+        void cannotGoDirectlyToNoShow_unconfirmedBookingsAreCancelledInstead() {
+            assertFalse(state.allowedNextStates().contains(AppointmentStatus.NO_SHOW));
+        }
+
+        @Test
         void doesNotImplementEntryValidatorOrHook() {
             assertFalse(state instanceof EntryValidator);
             assertFalse(state instanceof EntryHook);
+        }
+    }
+
+    // --- NoShowState ---
+
+    @Nested
+    class NoShowStateTests {
+        private final NoShowState state = new NoShowState();
+
+        @Test
+        void status_returnsNoShow() {
+            assertEquals(AppointmentStatus.NO_SHOW, state.status());
+        }
+
+        @Test
+        void isTerminal_noNextStates() {
+            assertTrue(state.allowedNextStates().isEmpty());
+        }
+
+        @Test
+        void implementsEntryValidatorButNotHook() {
+            assertInstanceOf(EntryValidator.class, state);
+            assertFalse(state instanceof EntryHook);
+        }
+
+        @Test
+        void validateEntry_passesOnceScheduledTimeHasPassed() {
+            Appointment appointment = Appointment.builder()
+                    .scheduledAt(LocalDateTime.now().minusMinutes(30))
+                    .build();
+            assertDoesNotThrow(() -> state.validateEntry(appointment));
+        }
+
+        @Test
+        void validateEntry_throwsWhenAppointmentHasNotStartedYet() {
+            Appointment appointment = Appointment.builder()
+                    .scheduledAt(LocalDateTime.now().plusHours(2))
+                    .build();
+            assertThrows(Exception.class, () -> state.validateEntry(appointment));
         }
     }
 
@@ -50,11 +94,12 @@ class AppointmentStateTest {
         }
 
         @Test
-        void allowedNextStates_containsInProgressAndCancelled() {
+        void allowedNextStates_containsInProgressCancelledAndNoShow() {
             Set<AppointmentStatus> allowed = state.allowedNextStates();
             assertTrue(allowed.contains(AppointmentStatus.IN_PROGRESS));
             assertTrue(allowed.contains(AppointmentStatus.CANCELLED));
-            assertEquals(2, allowed.size());
+            assertTrue(allowed.contains(AppointmentStatus.NO_SHOW));
+            assertEquals(3, allowed.size());
         }
 
         @Test

@@ -30,6 +30,7 @@ import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.Room;
 import com.clinic.portal.model.Specialization;
 import com.clinic.portal.model.User;
+import com.clinic.portal.model.enums.AppointmentMode;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.model.enums.Role;
 import com.clinic.portal.model.enums.RoomStatus;
@@ -40,6 +41,8 @@ import com.clinic.portal.repository.PatientProfileRepository;
 import com.clinic.portal.repository.RoomRepository;
 import com.clinic.portal.repository.SpecializationRepository;
 import com.clinic.portal.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.clinic.portal.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -260,8 +263,8 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<AdminPatientDTO> getAdminPatients() {
-        return patientProfileRepository.findAll().stream()
+    public Page<AdminPatientDTO> getAdminPatients(String search, Boolean active, Pageable pageable) {
+        return patientProfileRepository.search(search == null ? "" : search.trim(), active, pageable)
                 .map(p -> new AdminPatientDTO(
                         p.getId(),
                         p.getUser().getId(),
@@ -276,8 +279,7 @@ public class AdminServiceImpl implements AdminService {
                         p.getAddress(),
                         p.getEmergencyContactName(),
                         p.getEmergencyContactPhone()
-                ))
-                .toList();
+                ));
     }
 
     @Override
@@ -370,10 +372,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<AppointmentResponseDTO> getAllAppointments() {
-        return appointmentRepository.findAll().stream()
-                .map(appointmentMapper::toDto)
-                .toList();
+    public Page<AppointmentResponseDTO> getAllAppointments(String search, AppointmentStatus status,
+                                                           AppointmentMode mode, Pageable pageable) {
+        return appointmentRepository.search(search == null ? "" : search.trim(), status, mode, pageable)
+                .map(appointmentMapper::toDto);
     }
 
     @Override
@@ -382,7 +384,8 @@ public class AdminServiceImpl implements AdminService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new DataNotFoundException(ExceptionCode.APPOINTMENT_NOT_FOUND));
         if (appointment.getStatus() == AppointmentStatus.COMPLETED
-                || appointment.getStatus() == AppointmentStatus.CANCELLED) {
+                || appointment.getStatus() == AppointmentStatus.CANCELLED
+                || appointment.getStatus() == AppointmentStatus.NO_SHOW) {
             throw new BusinessException(ExceptionCode.APPOINTMENT_CANNOT_BE_MODIFIED);
         }
         appointment.setStatus(AppointmentStatus.CANCELLED);

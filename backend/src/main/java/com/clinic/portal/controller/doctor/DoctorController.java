@@ -1,9 +1,12 @@
 package com.clinic.portal.controller.doctor;
 
+import com.clinic.portal.dto.doctor.AvailabilityWindowDTO;
+import com.clinic.portal.dto.doctor.AvailableSlotDTO;
 import com.clinic.portal.dto.doctor.BookedSlotDTO;
 import com.clinic.portal.dto.doctor.DoctorPatientListItemDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileResponseDTO;
 import com.clinic.portal.dto.doctor.DoctorProfileUpdateDTO;
+import com.clinic.portal.dto.doctor.DoctorReviewDTO;
 import com.clinic.portal.dto.doctor.PatientSummaryDTO;
 import com.clinic.portal.dto.doctor.RecentPatientDTO;
 import com.clinic.portal.exception.ExceptionBody;
@@ -39,7 +42,7 @@ public interface DoctorController {
     List<DoctorProfileResponseDTO> getAllDoctors();
 
     @GetMapping("/{profileId}/booked-slots")
-    @Operation(summary = "Get doctor's booked slots", description = "Returns non-cancelled appointments for a given doctor on a given date — used by patients during booking to show busy time slots.")
+    @Operation(summary = "Get doctor's booked slots", description = "Returns non-cancelled appointments for a given doctor on a given date. Used by patients during booking to show busy time slots.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Booked slots retrieved",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -120,6 +123,72 @@ public interface DoctorController {
     })
     @ResponseStatus(HttpStatus.OK)
     PatientSummaryDTO getPatientSummary(@PathVariable Long patientProfileId);
+
+    @GetMapping("/me/availability")
+    @Operation(summary = "Get my working hours", description = "Returns the authenticated doctor's recurring weekly availability windows.")
+    @ApiResponse(responseCode = "200", description = "Availability retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AvailabilityWindowDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<AvailabilityWindowDTO> getMyAvailability();
+
+    @PutMapping("/me/availability")
+    @Operation(summary = "Update my working hours", description = "Replaces the authenticated doctor's weekly availability with the submitted windows. Windows must not overlap on the same day.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Availability updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AvailabilityWindowDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid or overlapping windows",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    List<AvailabilityWindowDTO> updateMyAvailability(@RequestBody @Valid List<AvailabilityWindowDTO> windows);
+
+    @GetMapping("/{profileId}/availability")
+    @Operation(summary = "Get a doctor's working hours", description = "Returns a doctor's recurring weekly availability windows — shown to patients while booking.")
+    @ApiResponse(responseCode = "200", description = "Availability retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = AvailabilityWindowDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<AvailabilityWindowDTO> getDoctorAvailability(@PathVariable Long profileId);
+
+    @GetMapping("/{profileId}/available-slots")
+    @Operation(summary = "Get a doctor's free slots", description = "Computes bookable slots for a date from the doctor's working hours minus booked appointments. Empty if the doctor has not configured hours for that weekday.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Available slots computed",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AvailableSlotDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Doctor not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    List<AvailableSlotDTO> getAvailableSlots(
+            @PathVariable Long profileId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "30") int durationMinutes);
+
+    @GetMapping("/{profileId}/reviews")
+    @Operation(summary = "Get a doctor's reviews", description = "Returns patient ratings and reviews from completed appointments, newest first. Patients are shown as first name and last initial.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reviews retrieved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = DoctorReviewDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Doctor not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ExceptionBody.class)))
+    })
+    @ResponseStatus(HttpStatus.OK)
+    List<DoctorReviewDTO> getDoctorReviews(@PathVariable Long profileId);
+
+    @GetMapping("/me/reviews")
+    @Operation(summary = "Get my reviews", description = "Returns the authenticated doctor's own patient reviews, newest first.")
+    @ApiResponse(responseCode = "200", description = "Reviews retrieved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = DoctorReviewDTO.class)))
+    @ResponseStatus(HttpStatus.OK)
+    List<DoctorReviewDTO> getMyReviews();
 
     @PutMapping("/me")
     @Operation(summary = "Update my profile", description = "Update the profile of the currently authenticated doctor.")

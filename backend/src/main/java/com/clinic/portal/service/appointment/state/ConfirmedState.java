@@ -19,6 +19,6 @@ public class ConfirmedState implements AppointmentState {
 
     @Override
     public Set<AppointmentStatus> allowedNextStates() {
-        return Set.of(AppointmentStatus.IN_PROGRESS, AppointmentStatus.CANCELLED);
+        return Set.of(AppointmentStatus.IN_PROGRESS, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW);
     }
 }

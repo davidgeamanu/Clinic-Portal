@@ -12,12 +12,14 @@ import com.clinic.portal.exception.DuplicateDataException;
 import com.clinic.portal.exception.ExceptionCode;
 import com.clinic.portal.mapper.AppointmentMapper;
 import com.clinic.portal.model.Appointment;
+import com.clinic.portal.model.DoctorAvailability;
 import com.clinic.portal.model.DoctorProfile;
 import com.clinic.portal.model.PatientProfile;
 import com.clinic.portal.model.User;
 import com.clinic.portal.model.enums.AppointmentMode;
 import com.clinic.portal.model.enums.AppointmentStatus;
 import com.clinic.portal.repository.AppointmentRepository;
+import com.clinic.portal.repository.DoctorAvailabilityRepository;
 import com.clinic.portal.repository.DoctorProfileRepository;
 import com.clinic.portal.repository.PatientProfileRepository;
 import com.clinic.portal.repository.UserRepository;
@@ -28,15 +30,15 @@ import com.clinic.portal.service.appointment.state.EntryHook;
 import com.clinic.portal.service.appointment.state.EntryValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.OptionalDouble;
 
 @Service
 @Transactional(readOnly = true)
@@ -46,6 +48,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final DoctorProfileRepository doctorProfileRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final UserRepository userRepository;
     private final AppointmentMapper appointmentMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -61,17 +64,20 @@ public class AppointmentServiceImpl implements AppointmentService {
         DoctorProfile doctor = doctorProfileRepository.findById(dto.doctorId())
                 .orElseThrow(() -> new DataNotFoundException(ExceptionCode.DOCTOR_NOT_FOUND));
 
+        validateWithinWorkingHours(doctor, dto.scheduledAt(), dto.durationMinutes());
+
         // Half-open overlap check: [newStart, newEnd) vs [existingStart, existingEnd).
         // Two ranges overlap iff existingStart < newEnd AND existingEnd > newStart.
-        // We scan only same-day appointments to keep the result set small.
+        // The scan window starts a day early so appointments that begin before
+        // midnight but overlap the requested slot are still caught.
         LocalDateTime newStart = dto.scheduledAt();
         LocalDateTime newEnd = newStart.plusMinutes(dto.durationMinutes());
-        LocalDateTime dayStart = newStart.toLocalDate().atStartOfDay();
-        LocalDateTime dayEnd = newStart.toLocalDate().atTime(LocalTime.MAX);
+        LocalDateTime windowStart = newStart.minusDays(1);
 
         boolean conflict = appointmentRepository
-                .findByDoctor_IdAndScheduledAtBetweenAndStatusNot(
-                        doctor.getId(), dayStart, dayEnd, AppointmentStatus.CANCELLED)
+                .findByDoctor_IdAndScheduledAtBetweenAndStatusNotIn(
+                        doctor.getId(), windowStart, newEnd,
+                        EnumSet.of(AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW))
                 .stream()
                 .anyMatch(a -> a.getScheduledAt().isBefore(newEnd)
                         && a.getScheduledAt().plusMinutes(a.getDurationMinutes()).isAfter(newStart));
@@ -89,7 +95,15 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .reason(dto.reason())
                 .build();
 
-        Appointment saved = appointmentRepository.save(appointment);
+        // The check above is advisory only — under concurrency two requests can
+        // both pass it. The database exclusion constraint is the real guarantee;
+        // flush here so its violation surfaces inside this method.
+        Appointment saved;
+        try {
+            saved = appointmentRepository.saveAndFlush(appointment);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateDataException(ExceptionCode.APPOINTMENT_SLOT_TAKEN);
+        }
 
         eventPublisher.publishEvent(new AppointmentBookedEvent(saved.getId()));
 
@@ -167,17 +181,35 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setReview(dto.review());
         appointmentRepository.save(appointment);
 
-        // Recompute doctor's aggregate rating across all rated appointments.
+        // Recompute doctor's aggregate rating with a single AVG query.
         DoctorProfile doctor = appointment.getDoctor();
-        OptionalDouble avg = appointmentRepository.findByDoctorOrderByScheduledAtDesc(doctor).stream()
-                .map(Appointment::getRating)
-                .filter(java.util.Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .average();
-        doctor.setRating(avg.isPresent() ? BigDecimal.valueOf(avg.getAsDouble()).setScale(2, RoundingMode.HALF_UP) : null);
+        Double avg = appointmentRepository.findAverageRatingForDoctor(doctor);
+        doctor.setRating(avg != null ? BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP) : null);
         doctorProfileRepository.save(doctor);
 
         return appointmentMapper.toDto(appointment);
+    }
+
+    /**
+     * Doctors who configured working hours only accept appointments that fit
+     * entirely inside one of their windows. Doctors with no configured hours
+     * keep the legacy behaviour and accept any future slot.
+     */
+    private void validateWithinWorkingHours(DoctorProfile doctor, LocalDateTime start, int durationMinutes) {
+        List<DoctorAvailability> windows = doctorAvailabilityRepository
+                .findByDoctor_IdOrderByDayOfWeekAscStartTimeAsc(doctor.getId());
+        if (windows.isEmpty()) return;
+
+        LocalDateTime end = start.plusMinutes(durationMinutes);
+        boolean fits = start.toLocalDate().equals(end.toLocalDate())
+                && windows.stream()
+                .filter(w -> w.getDayOfWeek() == start.getDayOfWeek())
+                .anyMatch(w -> !start.toLocalTime().isBefore(w.getStartTime())
+                        && !end.toLocalTime().isAfter(w.getEndTime()));
+
+        if (!fits) {
+            throw new BusinessException(ExceptionCode.APPOINTMENT_OUTSIDE_WORKING_HOURS);
+        }
     }
 
     private Appointment findAppointment(Long id) {
