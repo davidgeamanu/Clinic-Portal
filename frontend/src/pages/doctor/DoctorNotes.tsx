@@ -71,7 +71,11 @@ function RecordCard({
               <Stethoscope className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{note.diagnosis}</p>
+              {/* Diagnosis doubles as the card title, but it is free text and can run
+                  to a paragraph — clamp it and keep the full value on hover. */}
+              <p className="text-sm font-semibold text-foreground line-clamp-2" title={note.diagnosis ?? undefined}>
+                {note.diagnosis}
+              </p>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                 <button
                     onClick={() => onViewPatient(note.patientProfileId)}

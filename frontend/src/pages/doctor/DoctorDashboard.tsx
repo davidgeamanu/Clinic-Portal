@@ -201,21 +201,29 @@ export default function DoctorDashboard() {
             ) : (
                 <div className="space-y-4">
                   {recentPatients.map((p) => (
-                      <div key={p.patientProfileId} className="space-y-2 p-3 rounded-lg bg-muted/30">
+                      // Glance card: name, recency, and a clamped diagnosis. Consultation
+                      // notes are full paragraphs and live on the patient record, one click away.
+                      <button
+                          key={p.patientProfileId}
+                          type="button"
+                          onClick={() => navigate(`/doctor/patients/${p.patientProfileId}`)}
+                          className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                          <div className="h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                             {p.firstName[0]}{p.lastName[0]}
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{p.firstName} {p.lastName}</p>
-                            <p className="text-xs text-muted-foreground">{p.diagnosis ?? "—"}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{p.firstName} {p.lastName}</p>
+                            <p className="text-xs text-muted-foreground">Last visit: {relativeDate(p.lastVisitDate)}</p>
                           </div>
                         </div>
-                        {p.notes && (
-                            <p className="text-xs text-muted-foreground"><strong>Notes:</strong> {p.notes}</p>
+                        {p.diagnosis && (
+                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2" title={p.diagnosis}>
+                              {p.diagnosis}
+                            </p>
                         )}
-                        <p className="text-xs text-muted-foreground">Last visit: {relativeDate(p.lastVisitDate)}</p>
-                      </div>
+                      </button>
                   ))}
                 </div>
             )}
