@@ -10,6 +10,7 @@
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![CI](https://img.shields.io/github/actions/workflow/status/davidgeamanu/Clinic-Portal/ci.yml?style=for-the-badge&label=CI)](https://github.com/davidgeamanu/Clinic-Portal/actions)
 
 *Patients book appointments and track their medical history. Doctors manage their schedule and record consultation notes. Admins oversee users, rooms, and departments. Notifications are handled by a separate microservice that listens to events over RabbitMQ.*
 
@@ -46,23 +47,25 @@
 
 ### Patient
 - Self-registration & secure login
-- Book, view, and cancel appointments
-- Browse doctors by specialization
+- **AI symptom triage** — describe symptoms, get a department recommendation (Claude API)
+- Book appointments from **real availability slots** computed from doctor working hours
+- Read **doctor reviews** before booking
 - View consultation notes & medical documents
 - Track personal health profile (vitals, allergies, conditions, family history)
 - Rate and review completed appointments
-- Real-time notifications
+- **Real-time notifications over SSE** (no polling)
 
 </td>
 <td width="33%">
 
 ### Doctor
 - Manage personal schedule & appointments
+- Define **weekly working hours** that drive patient booking slots
 - Run consultations (start, complete, cancel)
 - Record diagnosis, treatment, prescriptions & notes
 - Upload, download, and delete medical documents
 - View patient history (only for patients with a shared appointment)
-- Update profile biography and consultation fee
+- See own **patient reviews** and update biography / consultation fee
 
 </td>
 <td width="33%">
@@ -73,6 +76,7 @@
 - Manage rooms (department, type, status)
 - Monitor departments and specializations
 - View dashboard KPIs, weekly charts & analytics
+- Paginated patient and appointment lists
 - Force-cancel any appointment
 
 </td>
@@ -92,7 +96,8 @@
 - **Spring Boot 4.0.5**
 - **Spring Security** with JWT (HttpOnly cookie)
 - **Spring Data JPA / Hibernate**
-- **PostgreSQL**
+- **PostgreSQL** + **Flyway** migrations
+- **Anthropic Java SDK** (AI triage)
 - **Lombok**
 - **Maven**
 
@@ -103,8 +108,9 @@
 - **Java 25**
 - **Spring Boot 4.0.6**
 - **RabbitMQ** for async event consumption
+- **Server-Sent Events** for real-time push
 - **JavaMail** via Mailtrap SMTP
-- **PostgreSQL**
+- **PostgreSQL** + **Flyway** migrations
 - **Maven**
 
 </td>
@@ -141,21 +147,49 @@ When something notable happens (an appointment is booked, its status changes, or
 
 Events are self-contained and carry all the data the notification service needs (names, emails, timestamps), so there are no callbacks into the portal.
 
-Emails are sent through Mailtrap SMTP with color-coded HTML templates per notification type, and can be toggled off via `MAIL_ENABLED`.
+Emails are sent through Mailtrap SMTP with color-coded HTML templates per notification type, and can be toggled off via `MAIL_ENABLED`. New notifications are also pushed to the browser in real time over **Server-Sent Events**.
+
+### Messaging Reliability
+
+- **Transactional outbox:** events are written to an `outbox_events` table in the same transaction as the domain change; a scheduled `OutboxRelay` publishes them to RabbitMQ. If the broker is down, events queue up and are delivered when it recovers — nothing is lost.
+- **Idempotent consumer:** the notification service records every processed `eventId` in a `processed_events` table, so at-least-once delivery never produces duplicate notifications.
+- **Dead letter queue:** all three queues dead-letter into `clinic.notifications.dlq` after the retry policy is exhausted, so poison messages can be inspected instead of being redelivered forever.
+- **Correlation IDs:** every HTTP request gets an `X-Correlation-Id` that travels through the outbox into RabbitMQ headers and into the notification service's logs — one booking can be traced across both services.
 
 ### Design Patterns
 
-- **Auth:** stateless JWT issued as an HttpOnly cookie (8-hour expiry), carrying email, userId, role, profileId, and active status.
+- **Auth:** stateless JWT issued as an HttpOnly, `SameSite=Lax` cookie (8-hour expiry), carrying email, userId, role, profileId, and active status. The `active` flag is re-checked against the database on every request, so deactivating an account takes effect immediately.
 - **Authorization:** `@PreAuthorize` with shared SpEL expressions in `AuthorizationExpressions`. A common `AuthenticatedController` interface exposes `currentUser()` to all controllers.
-- **Observer pattern:** domain events via `ApplicationEventPublisher`. A synchronous `RoomStatusEventListener` handles atomic side effects, while `RabbitMqEventPublisher` fires after commit to deliver cross-service events.
-- **State pattern:** one `@Component` per `AppointmentStatus`, split by interface into `AppointmentState`, `EntryValidator`, and `EntryHook`. Looked up through an `EnumMap`-backed `AppointmentStateRegistry`.
+- **Observer pattern:** domain events via `ApplicationEventPublisher`. A synchronous `RoomStatusEventListener` handles atomic side effects, while `OutboxEventRecorder` writes cross-service events to the transactional outbox before commit.
+- **State pattern:** one `@Component` per `AppointmentStatus` (including the terminal `NO_SHOW`), split by interface into `AppointmentState`, `EntryValidator`, and `EntryHook`. Looked up through an `EnumMap`-backed `AppointmentStateRegistry`.
 - **Strategy pattern:** in the notification service, one `@Component` per `NotificationType` builds the human-readable message. Indexed by `NotificationMessageStrategyRegistry`.
-- **Auto-cancel:** `AppointmentExpirationJob` runs every minute and cancels unconfirmed past-due appointments via the state machine.
+- **Auto-expiry:** `AppointmentExpirationJob` runs every minute and cancels bookings still unconfirmed at their start time, so an abandoned booking stops holding the doctor's slot.
+- **No-shows:** a separate, manual action. Only a doctor or admin can mark a *confirmed* appointment as `NO_SHOW`, and only once its start time has passed — patients cannot mark themselves absent.
+- **Double-booking protection:** the application checks for overlaps, but the real guarantee is a PostgreSQL **GiST exclusion constraint** on `(doctor_id, time range)` — two concurrent bookings for the same slot cannot both commit.
 - **Soft-delete:** the `active` flag on `User` controls account visibility. Errors are returned as a consistent `ExceptionBody { timestamp, code, message, details }`.
 
 ---
 
 ## Getting Started
+
+### Quick Start with Docker (recommended)
+
+The whole stack — PostgreSQL, RabbitMQ, both services, and the frontend behind nginx — comes up with one command:
+
+```bash
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API / Swagger | http://localhost:8080/api/swagger-ui/index.html |
+| Notification API / Swagger | http://localhost:8081/api/swagger-ui/index.html |
+| RabbitMQ management UI | http://localhost:15672 (guest/guest) |
+
+Optional settings (Claude API key for AI triage, Mailtrap credentials) go in a `.env` file — see [.env.example](.env.example). Everything else has safe dev defaults.
+
+### Manual Setup
 
 ### Prerequisites
 
@@ -185,7 +219,7 @@ CREATE DATABASE clinic_portal;
 CREATE DATABASE clinic_notifications_db;
 ```
 
-> Tables are created automatically on first run via Hibernate's auto-DDL.
+> The schema is managed by **Flyway** — migrations under `src/main/resources/db/migration` run automatically on startup, and Hibernate validates the result (`ddl-auto: validate`).
 
 ---
 
@@ -311,6 +345,7 @@ Starts on **`http://localhost:5173`**. The Vite dev server proxies `/api/notific
 | `MAILTRAP_USERNAME` | notification-service | Mailtrap SMTP username |
 | `MAILTRAP_PASSWORD` | notification-service | Mailtrap SMTP password |
 | `MAIL_ENABLED` | notification-service | Toggles email sending (default: `true`) |
+| `ANTHROPIC_API_KEY` | backend | Optional — enables Claude-powered symptom triage. Without it, a keyword-based fallback classifier is used |
 
 ---
 
@@ -343,7 +378,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `GET` | `/api/admin/departments` | All specializations with counts |
 | `GET` | `/api/admin/rooms` | All rooms |
 | `PATCH` | `/api/admin/rooms/{id}` | Update room department, type, or status |
-| `GET` | `/api/admin/patients` | All patients |
+| `GET` | `/api/admin/patients?page=&size=` | Patients (paginated) |
 | `GET` | `/api/admin/patients/{id}/appointments` | Appointments for a patient |
 | `GET` | `/api/admin/doctors/{id}/appointments` | Appointments for a doctor |
 | `GET` | `/api/admin/users` | All users |
@@ -352,7 +387,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `POST` | `/api/admin/doctors` | Create a doctor account and profile |
 | `PATCH` | `/api/admin/doctors/{doctorProfileId}/room` | Assign or unassign a consult room for a doctor |
 | `GET` | `/api/admin/specializations` | All specializations |
-| `GET` | `/api/admin/appointments` | All appointments |
+| `GET` | `/api/admin/appointments?page=&size=` | Appointments (paginated) |
 | `PATCH` | `/api/admin/appointments/{id}/cancel` | Force-cancel any appointment |
 
 ### Patients & Doctors
@@ -365,11 +400,23 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `GET` | `/api/doctors/{id}` | Any | Single doctor profile |
 | `GET` | `/api/doctors/specialization/{specializationId}` | Any | Doctors by specialization |
 | `GET` | `/api/doctors/{id}/booked-slots?date=` | Any | Booked slots for a doctor on a given date |
+| `GET` | `/api/doctors/{id}/availability` | Any | A doctor's weekly working hours |
+| `GET` | `/api/doctors/{id}/available-slots?date=` | Any | Free bookable slots computed from working hours minus booked appointments |
+| `GET` | `/api/doctors/{id}/reviews` | Any | Patient ratings & reviews for a doctor |
 | `GET` | `/api/doctors/me` | DOCTOR | Own doctor profile |
 | `PUT` | `/api/doctors/me` | DOCTOR | Update biography and consultation fee |
+| `GET` | `/api/doctors/me/availability` | DOCTOR | Own weekly working hours |
+| `PUT` | `/api/doctors/me/availability` | DOCTOR | Replace own weekly working hours |
+| `GET` | `/api/doctors/me/reviews` | DOCTOR | Own patient reviews |
 | `GET` | `/api/doctors/me/recent-patients` | DOCTOR | Last 3 distinct patients |
 | `GET` | `/api/doctors/me/patients` | DOCTOR | All distinct patients |
 | `GET` | `/api/doctors/me/patients/{id}` | DOCTOR | Patient summary (requires a shared appointment) |
+
+### AI Triage
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/triage` | PATIENT | Recommends a department from a free-text symptom description (Claude API with keyword fallback) |
 
 ### Appointments
 
@@ -401,6 +448,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | Method | Endpoint | Role | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/notifications/me` | Authenticated | All notifications for the current user |
+| `GET` | `/api/notifications/stream` | Authenticated | Server-Sent Events stream — pushes new notifications in real time |
 | `PATCH` | `/api/notifications/{id}/read` | Authenticated | Mark one notification as read |
 | `PATCH` | `/api/notifications/read-all` | Authenticated | Mark all notifications as read |
 
@@ -420,13 +468,16 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `Appointment` | Links a patient and a doctor - scheduled time, duration, mode, status, reason, timestamps, rating, review |
 | `ConsultationNote` | One-to-one with `Appointment` - diagnosis, treatment, prescription, notes |
 | `MedicalDocument` | Many-to-one with `ConsultationNote` - file metadata (files stored locally on disk) |
+| `DoctorAvailability` | Recurring weekly working windows per doctor (day of week, start, end) - drives available booking slots |
+| `OutboxEvent` | Transactional outbox row - fat event payload written atomically with the domain change, relayed to RabbitMQ |
 | `Notification` | Lives in `clinic_notifications_db` - userId, message, type, read flag, related entity id |
+| `ProcessedEvent` | Lives in `clinic_notifications_db` - consumed `eventId` ledger for idempotent event processing |
 
-**Appointment lifecycle:** `SCHEDULED → CONFIRMED → IN_PROGRESS → COMPLETED / CANCELLED`
+**Appointment lifecycle:** `SCHEDULED → CONFIRMED → IN_PROGRESS → COMPLETED`, with `SCHEDULED → CANCELLED`, `CONFIRMED → CANCELLED / NO_SHOW`, and `IN_PROGRESS → CANCELLED`
 
-### Auto-Generation
+### Schema Management
 
-Tables are created automatically via Hibernate's auto-DDL. For a real deployment, swap to Flyway or Liquibase and set `ddl-auto=validate`.
+The schema is versioned with **Flyway** (`db/migration` in each service) and Hibernate runs in `validate` mode. Highlights: a PostgreSQL `btree_gist` **exclusion constraint** makes overlapping appointments for the same doctor impossible to commit, and a partial index keeps the outbox relay scan cheap.
 
 ---
 
@@ -470,29 +521,19 @@ Clinic-Portal/
 ## Future Enhancements
 
 ### Messaging & Reliability
-- **Dead Letter Queue (DLQ)** - capture poison messages so they can be inspected instead of silently dropped
-- **Idempotency dedup** - store processed `eventId`s to avoid duplicate notifications if the consumer restarts
-- **Outbox pattern** - prevent notification loss when RabbitMQ is temporarily down during a booking
 - **Password change notifications** - a new event type, queue, and strategy that sends a security email when a password changes
-- **`NO_SHOW` status** - a dedicated enum for auto-cancelled appointments with its own notification message
-
-### Real-Time Communication
-- **WebSockets or SSE** - push notifications to the frontend in real time instead of polling. SSE works well for one-way server-to-client delivery; WebSockets if bidirectional communication is ever needed (e.g. live chat)
 
 ### Caching
 - **Redis** - cache doctor profiles, specialization lists, available slots, and dashboard KPI queries, with cache invalidation on writes
 
-### AI Integration
-- **AI Assistant** - a symptom checker before booking, smart doctor recommendations based on symptoms and specialization, or a chatbot for common patient questions
-
 ### Infrastructure & Scaling
 - **Kubernetes** - orchestrate the backend, notification service, PostgreSQL, and RabbitMQ as pods with horizontal scaling, health checks, and rolling deployments
-- **Distributed lock (ShedLock)** - prevent duplicate `AppointmentExpirationJob` runs when running multiple backend instances
+- **Distributed lock (ShedLock)** - prevent duplicate `AppointmentExpirationJob` and `OutboxRelay` runs when running multiple backend instances
 - **Service decomposition** - split the backend into smaller services (appointment-service, user-service, consultation-service) if the domain grows significantly
 
 ### Patient-Facing Features
-- **Doctor reviews** - show existing ratings and reviews on a doctor's public profile so patients can read them before booking, and let doctors see their own reviews on the dashboard
 - **Room utilization beyond consultations** - allow `OR` and `IMAGING` rooms to be booked independently for surgeries or scans, not just auto-assigned through appointments
+- **Live chat** - upgrade the SSE channel to WebSockets for bidirectional patient-doctor messaging
 
 ---
 
