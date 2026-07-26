@@ -1,5 +1,6 @@
 package com.clinic.portal.security;
 
+import com.clinic.portal.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -24,6 +25,7 @@ import java.util.Arrays;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -40,6 +42,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 UserDetailsImpl userDetails = jwtService.parseToken(token);
+                // Re-check the account against the database so deactivation takes
+                // effect immediately instead of when the 8-hour token expires.
+                if (!userRepository.existsByIdAndActiveTrue(userDetails.getId())) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 AbstractAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

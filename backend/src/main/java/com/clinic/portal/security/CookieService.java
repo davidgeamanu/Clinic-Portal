@@ -17,6 +17,7 @@ public class CookieService {
     public void addAccessTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
                 .httpOnly(true)
+                .sameSite("Lax")
                 .path("/")
                 .maxAge(jwtService.getExpirationSeconds())
                 .build();
@@ -27,6 +28,7 @@ public class CookieService {
     public void clearAccessTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, "")
                 .httpOnly(true)
+                .sameSite("Lax")
                 .path("/")
                 .maxAge(0)
                 .build();
