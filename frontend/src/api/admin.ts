@@ -11,36 +11,42 @@ import type {
   RoomResponse,
   RoomUpdateRequest,
   AdminPatient,
+  AppointmentMode,
+  AppointmentStatus,
+  Page,
   Role,
 } from "@/types/api";
 
 export const adminApi = {
-  // ── Dashboard & Analytics ──────────────────────────────────────────────────
+  // Dashboard & Analytics
   getDashboard: () =>
       api.get<AdminDashboard>("/admin/dashboard").then((r) => r.data),
 
   getAnalytics: () =>
       api.get<AdminAnalytics>("/admin/analytics").then((r) => r.data),
 
-  // ── Departments ────────────────────────────────────────────────────────────
+  // Departments
   getDepartments: () =>
       api.get<AdminDepartment[]>("/admin/departments").then((r) => r.data),
 
-  // ── Rooms ──────────────────────────────────────────────────────────────────
+  // Rooms
   getRooms: () =>
       api.get<RoomResponse[]>("/admin/rooms").then((r) => r.data),
 
   updateRoom: (id: number, data: RoomUpdateRequest) =>
       api.patch<RoomResponse>(`/admin/rooms/${id}`, data).then((r) => r.data),
 
-  // ── Patients ───────────────────────────────────────────────────────────────
-  getAdminPatients: () =>
-      api.get<AdminPatient[]>("/admin/patients").then((r) => r.data),
+  // Patients
+  // search/active are applied server-side across the whole table, not per page
+  getAdminPatients: (page = 0, size = 20, search = "", active?: boolean) =>
+      api.get<Page<AdminPatient>>("/admin/patients", {
+        params: { page, size, search, active },
+      }).then((r) => r.data),
 
   getPatientAppointments: (patientProfileId: number) =>
       api.get<AppointmentResponse[]>(`/admin/patients/${patientProfileId}/appointments`).then((r) => r.data),
 
-  // ── Users ──────────────────────────────────────────────────────────────────
+  // Users
   getAllUsers: () =>
       api.get<UserResponse[]>("/admin/users").then((r) => r.data),
 
@@ -54,7 +60,7 @@ export const adminApi = {
           })
           .then((r) => r.data),
 
-  // ── Doctors ────────────────────────────────────────────────────────────────
+  // Doctors
   getAllDoctorProfiles: () =>
       api.get<DoctorProfileResponse[]>("/doctors").then((r) => r.data),
 
@@ -67,13 +73,16 @@ export const adminApi = {
   assignDoctorRoom: (doctorProfileId: number, roomId: number | null) =>
       api.patch<DoctorProfileResponse>(`/admin/doctors/${doctorProfileId}/room`, { roomId }).then((r) => r.data),
 
-  // ── Specializations ────────────────────────────────────────────────────────
+  // Specializations
   getAllSpecializations: () =>
       api.get<SpecializationResponse[]>("/admin/specializations").then((r) => r.data),
 
-  // ── Appointments ───────────────────────────────────────────────────────────
-  getAllAppointments: () =>
-      api.get<AppointmentResponse[]>("/admin/appointments").then((r) => r.data),
+  // Appointments
+  // search/status/mode are applied server-side across the whole table, not per page
+  getAllAppointments: (page = 0, size = 20, search = "", status?: AppointmentStatus, mode?: AppointmentMode) =>
+      api.get<Page<AppointmentResponse>>("/admin/appointments", {
+        params: { page, size, search, status, mode },
+      }).then((r) => r.data),
 
   cancelAppointment: (id: number) =>
       api.patch<AppointmentResponse>(`/admin/appointments/${id}/cancel`).then((r) => r.data),

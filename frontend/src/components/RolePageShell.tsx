@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { RoleSidebar } from "@/components/RoleSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { useNotificationStream } from "@/hooks/useNotificationStream";
 
 interface RolePageShellProps {
   title: string;
@@ -9,6 +10,7 @@ interface RolePageShellProps {
 }
 
 export function RolePageShell({ title, subtitle, children }: RolePageShellProps) {
+  useNotificationStream();
   return (
     <div className="flex min-h-screen bg-background">
       <RoleSidebar />

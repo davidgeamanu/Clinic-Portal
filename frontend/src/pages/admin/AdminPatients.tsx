@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Phone, Mail, Droplets, MapPin, AlertCircle, Calendar, Clock } from "lucide-react";
 import { useAdminPatients, usePatientAppointments, useToggleUserStatus } from "@/hooks/useAdmin";
+import { useDebounce } from "@/hooks/useDebounce";
+import { PaginationControls } from "@/components/PaginationControls";
 import type { AdminPatient, AppointmentStatus } from "@/types/api";
 import * as React from "react";
 
@@ -16,6 +18,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
     IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
+    NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function calcAge(dob: string | null): string {
@@ -138,18 +141,21 @@ function AppointmentRow({ doctor, date, timeRange, status }: { doctor: string; d
 }
 
 export default function AdminPatients() {
-    const { data: patients = [], isLoading } = useAdminPatients();
+    const [page, setPage] = useState(0);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
     const [selected, setSelected] = useState<AdminPatient | null>(null);
     const toggleStatus = useToggleUserStatus(() => setSelected(null));
 
-    const filtered = patients.filter((p) => {
-        const name = `${p.firstName} ${p.lastName}`.toLowerCase();
-        const matchesSearch = name.includes(search.toLowerCase()) || p.email.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? p.active : !p.active);
-        return matchesSearch && matchesStatus;
-    });
+    // Filtering happens server-side, so it spans every page rather than just
+    // the twenty rows currently loaded.
+    const debouncedSearch = useDebounce(search);
+    const active = statusFilter === "all" ? undefined : statusFilter === "active";
+    const { data: patientsPage, isLoading } = useAdminPatients(page, 20, debouncedSearch, active);
+    const filtered = patientsPage?.content ?? [];
+
+    // A narrowed result set may have fewer pages than the one we were on
+    React.useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter]);
 
     return (
         <RolePageShell title="Manage Patients" subtitle="View and manage all patient records">
@@ -212,6 +218,7 @@ export default function AdminPatients() {
                     )}
                     </tbody>
                 </table>
+                <PaginationControls page={patientsPage?.page} onPageChange={setPage} />
             </div>
 
             <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>

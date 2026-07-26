@@ -16,7 +16,7 @@ import {
 import type { PatientHistoryItem } from "@/types/api";
 import { useRef } from "react";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 
 function formatDate(dateStr: string) {
     return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
@@ -24,7 +24,7 @@ function formatDate(dateStr: string) {
     });
 }
 
-// ── History Entry ─────────────────────────────────────────────────────────────
+// History Entry
 
 function HistoryEntry({ entry, patientProfileId }: { entry: PatientHistoryItem; patientProfileId: number }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +104,7 @@ function HistoryEntry({ entry, patientProfileId }: { entry: PatientHistoryItem; 
     );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// Page
 
 export default function DoctorPatientRecord() {
     const { patientProfileId } = useParams<{ patientProfileId: string }>();

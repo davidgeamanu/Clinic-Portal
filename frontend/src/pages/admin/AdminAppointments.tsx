@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RolePageShell } from "@/components/RolePageShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Clock, User, Calendar, DoorClosed, MapPin } from "lucide-react";
 import { useAllAppointments, useCancelAppointment } from "@/hooks/useAdmin";
+import { useDebounce } from "@/hooks/useDebounce";
+import { PaginationControls } from "@/components/PaginationControls";
 import type { AppointmentMode, AppointmentResponse, AppointmentStatus, RoomType } from "@/types/api";
 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
@@ -15,6 +17,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
     IN_PROGRESS:  "bg-primary/10 text-primary border-primary/20",
     COMPLETED:    "bg-muted text-muted-foreground border-border",
     CANCELLED:    "bg-muted text-muted-foreground border-border",
+    NO_SHOW:      "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const MODE_STYLES: Record<AppointmentMode, string> = {
@@ -63,7 +66,7 @@ function formatTimeRange(iso: string, durationMinutes: number) {
 }
 
 export default function AdminAppointments() {
-    const { data: appointments = [], isLoading } = useAllAppointments();
+    const [page, setPage] = useState(0);
     const cancelAppointment = useCancelAppointment();
 
     const [search, setSearch] = useState("");
@@ -71,14 +74,20 @@ export default function AdminAppointments() {
     const [modeFilter, setModeFilter] = useState<AppointmentMode | "all">("all");
     const [selected, setSelected] = useState<AppointmentResponse | null>(null);
 
-    const filtered = appointments.filter((a) => {
-        const matchesSearch =
-            a.patientName.toLowerCase().includes(search.toLowerCase()) ||
-            a.doctorName.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = statusFilter === "all" || a.status === statusFilter;
-        const matchesMode = modeFilter === "all" || a.mode === modeFilter;
-        return matchesSearch && matchesStatus && matchesMode;
-    });
+    // Filtering happens server-side, so it spans every page rather than just
+    // the twenty rows currently loaded.
+    const debouncedSearch = useDebounce(search);
+    const { data: appointmentsPage, isLoading } = useAllAppointments(
+        page,
+        20,
+        debouncedSearch,
+        statusFilter === "all" ? undefined : statusFilter,
+        modeFilter === "all" ? undefined : modeFilter,
+    );
+    const filtered = appointmentsPage?.content ?? [];
+
+    // A narrowed result set may have fewer pages than the one we were on
+    useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, modeFilter]);
 
     const canCancel = (status: AppointmentStatus) =>
         status !== "COMPLETED" && status !== "CANCELLED";
@@ -182,6 +191,7 @@ export default function AdminAppointments() {
                     )}
                     </tbody>
                 </table>
+                <PaginationControls page={appointmentsPage?.page} onPageChange={setPage} />
             </div>
 
             <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>

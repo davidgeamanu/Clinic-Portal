@@ -2,7 +2,9 @@ import api from "@/lib/api";
 import type {
     AppointmentResponse,
     AppointmentStatus,
+    AvailabilityWindow,
     ConsultationNoteRequest,
+    DoctorReview,
     ConsultationNoteResponse,
     DoctorNoteListItem,
     DoctorPatientListItem,
@@ -19,6 +21,15 @@ export const doctorApi = {
 
     updateMyProfile: (data: { biography?: string; consultationFee?: number }) =>
         api.put<DoctorProfileResponse>("/doctors/me", data).then((r) => r.data),
+
+    getMyAvailability: () =>
+        api.get<AvailabilityWindow[]>("/doctors/me/availability").then((r) => r.data),
+
+    getMyReviews: () =>
+        api.get<DoctorReview[]>("/doctors/me/reviews").then((r) => r.data),
+
+    updateMyAvailability: (windows: AvailabilityWindow[]) =>
+        api.put<AvailabilityWindow[]>("/doctors/me/availability", windows).then((r) => r.data),
 
     getMyAppointments: () =>
         api.get<AppointmentResponse[]>("/appointments/my/doctor").then((r) => r.data),

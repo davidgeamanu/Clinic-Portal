@@ -25,6 +25,8 @@ export const queryKeys = {
   doctor: {
     all: ["doctor"] as const,
     me: () => ["doctor", "me"] as const,
+    availability: () => ["doctor", "availability"] as const,
+    reviews: () => ["doctor", "reviews"] as const,
     recentPatients: () => ["doctor", "recentPatients"] as const,
     consultationNote: (appointmentId: number) => ["doctor", "consultationNote", appointmentId] as const,
     notes: () => ["doctor", "notes"] as const,
@@ -38,6 +40,9 @@ export const queryKeys = {
     detail: (id: number) => ["doctors", id] as const,
     bySpecialization: (id: number) => ["doctors", "specialization", id] as const,
     bookedSlots: (id: number, isoDate: string) => ["doctors", id, "booked-slots", isoDate] as const,
+    availability: (id: number) => ["doctors", id, "availability"] as const,
+    availableSlots: (id: number, isoDate: string) => ["doctors", id, "available-slots", isoDate] as const,
+    reviews: (id: number) => ["doctors", id, "reviews"] as const,
   },
   patients: {
     all: ["patients"] as const,

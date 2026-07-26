@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { doctorApi } from "@/api/doctor";
 import { queryKeys } from "@/lib/query-keys";
 import { getApiErrorMessage } from "@/lib/api";
-import type { AppointmentStatus, ConsultationNoteRequest } from "@/types/api";
+import type { AppointmentStatus, AvailabilityWindow, ConsultationNoteRequest } from "@/types/api";
 
 export function useDoctorProfile() {
   return useQuery({
@@ -24,6 +24,34 @@ export function useUpdateDoctorProfile() {
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Failed to update profile."));
     },
+  });
+}
+
+export function useMyAvailability() {
+  return useQuery({
+    queryKey: queryKeys.doctor.availability(),
+    queryFn: doctorApi.getMyAvailability,
+  });
+}
+
+export function useUpdateMyAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (windows: AvailabilityWindow[]) => doctorApi.updateMyAvailability(windows),
+    onSuccess: () => {
+      toast.success("Working hours updated.");
+      qc.invalidateQueries({ queryKey: queryKeys.doctor.availability() });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to update working hours."));
+    },
+  });
+}
+
+export function useMyReviews() {
+  return useQuery({
+    queryKey: queryKeys.doctor.reviews(),
+    queryFn: doctorApi.getMyReviews,
   });
 }
 

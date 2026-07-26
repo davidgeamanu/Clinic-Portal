@@ -9,12 +9,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import {
   CalendarIcon, Video, MapPin, Star, ArrowLeft, ArrowRight,
-  CheckCircle2, Stethoscope, DollarSign,
+  CheckCircle2, Stethoscope, DollarSign, Sparkles, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDoctorsList, useBookAppointment, useBookedSlots } from "@/hooks/usePatient";
+import {
+  useDoctorsList, useBookAppointment, useBookedSlots,
+  useDoctorAvailability, useAvailableSlots, useDoctorReviews, useTriage,
+} from "@/hooks/usePatient";
 import type { AppointmentMode, BookedSlot, DoctorProfileResponse, SpecializationResponse } from "@/types/api";
 
 const TIME_SLOTS = [
@@ -95,8 +98,20 @@ export default function BookAppointment() {
   const [mode, setMode] = useState<AppointmentMode>("IN_PERSON");
   const [reason, setReason] = useState<string>("");
 
+  // AI symptom triage (step 1 helper)
+  const [symptoms, setSymptoms] = useState<string>("");
+  const triage = useTriage();
+
   const isoDate = date ? toLocalDateIso(date) : null;
   const { data: bookedSlots = [] } = useBookedSlots(selectedDoctor?.id ?? null, isoDate);
+
+  // Doctors with configured working hours get server-computed free slots;
+  // doctors without any keep the legacy fixed grid filtered by booked slots.
+  const { data: workingHours = [] } = useDoctorAvailability(selectedDoctor?.id ?? null);
+  const hasWorkingHours = workingHours.length > 0;
+  const { data: serverSlots = [] } = useAvailableSlots(
+    selectedDoctor?.id ?? null, isoDate, hasWorkingHours);
+  const { data: doctorReviews = [] } = useDoctorReviews(selectedDoctor?.id ?? null);
 
   // Build specialization list from doctors (only active doctors)
   const specs = useMemo(() => {
@@ -128,6 +143,24 @@ export default function BookAppointment() {
       return slotDate.getTime() > now.getTime();
     });
   }, [date]);
+
+  // Unified slot list for rendering: server slots are already free;
+  // legacy grid slots may be taken by an existing appointment.
+  const slotOptions = useMemo<Array<{ time: string; taken: boolean }>>(() => {
+    if (!date) return [];
+    if (hasWorkingHours) {
+      return serverSlots.map((s) => ({
+        time: format(new Date(s.startTime), "HH:mm"),
+        taken: false,
+      }));
+    }
+    return availableSlots.map((t) => {
+      const [h, m] = t.split(":").map(Number);
+      const slotStart = new Date(date);
+      slotStart.setHours(h, m, 0, 0);
+      return { time: t, taken: isSlotBooked(slotStart.getTime(), SLOT_DURATION_MINUTES, bookedSlots) };
+    });
+  }, [date, hasWorkingHours, serverSlots, availableSlots, bookedSlots]);
 
   const canSubmit = !!selectedDoctor && !!date && !!slot && !book.isPending;
 
@@ -173,6 +206,69 @@ export default function BookAppointment() {
         {/* STEP 1: Specialization */}
         {step === 1 && (
           <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+            {/* AI symptom triage */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">Not sure which department? Describe your symptoms</h4>
+              </div>
+              <Textarea
+                placeholder="e.g. I've had a sharp pain in my lower back for two weeks, worse when I bend over..."
+                value={symptoms}
+                onChange={(e) => setSymptoms(e.target.value)}
+                rows={2}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] text-muted-foreground">
+                  This is a routing aid, not medical advice. In an emergency, call your local emergency number.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 shrink-0"
+                  disabled={symptoms.trim().length < 10 || triage.isPending}
+                  onClick={() => triage.mutate(symptoms.trim())}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {triage.isPending ? "Analyzing..." : "Suggest department"}
+                </Button>
+              </div>
+
+              {triage.data && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border-border bg-card p-3 space-y-2">
+                  {triage.data.urgency === "URGENT" && (
+                    <p className="text-xs font-semibold text-destructive inline-flex items-center gap-1">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      This may be urgent — consider seeking immediate care.
+                    </p>
+                  )}
+                  <p className="text-sm text-foreground">{triage.data.reasoning}</p>
+                  {triage.data.recommendedSpecialization && (
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        Suggested: <span className="font-semibold text-foreground">{triage.data.recommendedSpecialization}</span>
+                        {!triage.data.aiPowered && " (basic matching)"}
+                      </p>
+                      {(() => {
+                        const match = specs.find(({ spec }) =>
+                          spec.id === triage.data!.specializationId ||
+                          spec.name === triage.data!.recommendedSpecialization);
+                        return match ? (
+                          <Button size="sm" className="gap-1.5"
+                            onClick={() => { setSelectedSpec(match.spec); setSelectedDoctor(null); setStep(2); }}>
+                            Continue with {match.spec.name} <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">No doctors available in this department right now.</p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
             <h3 className="text-lg font-semibold text-foreground">Choose a Specialization</h3>
             {isLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -278,6 +374,30 @@ export default function BookAppointment() {
               </div>
             )}
 
+            {selectedDoctor && doctorReviews.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">
+                  What patients say about Dr. {selectedDoctor.lastName}
+                </h4>
+                {doctorReviews.slice(0, 3).map((r, i) => (
+                  <div key={i} className="border-l-2 border-primary/30 pl-3">
+                    <div className="flex items-center gap-2">
+                      <StarRating rating={r.rating} />
+                      <span className="text-xs text-muted-foreground">
+                        {r.patientName} · {r.visitDate}
+                      </span>
+                    </div>
+                    {r.review && (
+                      <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+                        “{r.review}”
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
             {selectedDoctor && (
               <div className="flex justify-end">
                 <Button onClick={() => setStep(3)} className="gap-2">
@@ -343,17 +463,15 @@ export default function BookAppointment() {
                     <p className="text-xs text-muted-foreground p-3 rounded-lg border border-dashed border-border">
                       Select a date first.
                     </p>
-                  ) : availableSlots.length === 0 ? (
+                  ) : slotOptions.length === 0 ? (
                     <p className="text-xs text-muted-foreground p-3 rounded-lg border border-dashed border-border">
-                      No slots remain today. Try another date.
+                      {hasWorkingHours
+                        ? "The doctor has no available slots on this date. Try another day."
+                        : "No slots remain today. Try another date."}
                     </p>
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
-                      {availableSlots.map((t) => {
-                        const [h, m] = t.split(":").map(Number);
-                        const slotStart = new Date(date);
-                        slotStart.setHours(h, m, 0, 0);
-                        const taken = isSlotBooked(slotStart.getTime(), SLOT_DURATION_MINUTES, bookedSlots);
+                      {slotOptions.map(({ time: t, taken }) => {
                         const selected = slot === t;
                         return (
                           <button

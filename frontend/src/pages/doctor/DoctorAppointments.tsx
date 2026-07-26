@@ -12,7 +12,7 @@ import { ElapsedTimer } from "@/components/ElapsedTimer";
 import type { AppointmentResponse, AppointmentStatus } from "@/types/api";
 
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// Constants
 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
     SCHEDULED:   "bg-warning/10 text-warning border-warning/20",
@@ -20,6 +20,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
     IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
+    NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -28,6 +29,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
     IN_PROGRESS: "In Progress",
     COMPLETED:   "Completed",
     CANCELLED:   "Cancelled",
+    NO_SHOW:     "No-show",
 };
 
 const MODE_STYLES = {
@@ -42,9 +44,10 @@ const STATUS_OPTIONS = [
     { label: "In Progress", value: "IN_PROGRESS" },
     { label: "Completed",   value: "COMPLETED" },
     { label: "Cancelled",   value: "CANCELLED" },
+    { label: "No-show",     value: "NO_SHOW" },
 ];
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// Helpers
 
 function actionText(status: AppointmentStatus): { title: string; description: string; action: string } {
     switch (status) {
@@ -52,8 +55,14 @@ function actionText(status: AppointmentStatus): { title: string; description: st
         case "IN_PROGRESS": return { title: "Start this consultation?",    description: "This will mark the appointment as in progress and start the elapsed timer.",  action: "Start"    };
         case "COMPLETED":   return { title: "Complete this consultation?", description: "This will mark the consultation as completed. This action cannot be undone.", action: "Complete" };
         case "CANCELLED":   return { title: "Cancel this appointment?",    description: "The patient will be notified. Cancelled appointments cannot be restarted.",   action: "Cancel"   };
+        case "NO_SHOW":     return { title: "Mark patient as a no-show?",  description: "Record that the patient did not attend. They will be notified, and this cannot be undone.", action: "Mark no-show" };
         default:            return { title: "Confirm action?",             description: "Are you sure you want to proceed?",                                           action: "Continue" };
     }
+}
+
+/** A no-show can only be recorded once the appointment's start time has passed. */
+function hasStarted(scheduledAt: string) {
+    return new Date(scheduledAt).getTime() <= Date.now();
 }
 
 function getDateStr(scheduledAt: string) {
@@ -86,7 +95,7 @@ function groupByDate(appointments: AppointmentResponse[]): [string, AppointmentR
     return Array.from(map.entries());
 }
 
-// ── Appointment Row ────────────────────────────────────────────────────────────
+// Appointment Row
 
 function AppointmentRow({
                             apt,
@@ -148,6 +157,13 @@ function AppointmentRow({
                         Start
                     </Button>
                 )}
+                {apt.status === "CONFIRMED" && hasStarted(apt.scheduledAt) && (
+                    <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            disabled={isPending}
+                            onClick={() => onAction(apt.id, "NO_SHOW")}>
+                        No-show
+                    </Button>
+                )}
                 {(apt.status === "SCHEDULED" || apt.status === "CONFIRMED") && (
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             disabled={isPending}
@@ -174,7 +190,7 @@ function AppointmentRow({
     );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────────
+// Page
 
 export default function DoctorAppointments() {
     const navigate = useNavigate();

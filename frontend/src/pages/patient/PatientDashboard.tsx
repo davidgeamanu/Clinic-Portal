@@ -31,6 +31,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
   COMPLETED:   "bg-muted text-muted-foreground border-border",
   CANCELLED:   "bg-muted text-muted-foreground border-border",
+  NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -39,6 +40,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "In Progress",
   COMPLETED:   "Completed",
   CANCELLED:   "Cancelled",
+  NO_SHOW:     "No-show",
 };
 
 const MODE_LABELS = { IN_PERSON: "In-Person", VIDEO: "Video" } as const;
@@ -52,6 +54,7 @@ const NOTIFICATION_ACCENTS: Record<NotificationType, string> = {
   APPOINTMENT_CONFIRMED: "bg-success",
   APPOINTMENT_STARTED:   "bg-primary",
   APPOINTMENT_CANCELLED: "bg-destructive",
+  APPOINTMENT_NO_SHOW:   "bg-warning",
   CONSULTATION_NOTE_ADDED: "bg-info",
   GENERAL: "bg-muted-foreground",
 };

@@ -25,6 +25,7 @@ const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string; l
   APPOINTMENT_CONFIRMED:   { icon: CheckCircle2, color: "bg-success/10 text-success",               label: "Appointment Confirmed" },
   APPOINTMENT_STARTED:     { icon: PlayCircle,   color: "bg-primary/10 text-primary",               label: "Appointment Started" },
   APPOINTMENT_CANCELLED:   { icon: XCircle,      color: "bg-destructive/10 text-destructive",       label: "Appointment Cancelled" },
+  APPOINTMENT_NO_SHOW:     { icon: XCircle,      color: "bg-warning/10 text-warning",               label: "Missed Appointment" },
   CONSULTATION_NOTE_ADDED: { icon: FileText,     color: "bg-info/10 text-info",                     label: "Consultation Notes" },
   GENERAL:                 { icon: Bell,         color: "bg-muted text-muted-foreground",           label: "Notification" },
 };

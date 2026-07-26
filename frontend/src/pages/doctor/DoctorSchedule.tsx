@@ -21,6 +21,7 @@ const CARD_STYLES: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "bg-success/10 border-success/30 text-foreground",
   COMPLETED:   "bg-muted border-border text-muted-foreground",
   CANCELLED:   "bg-muted border-border text-muted-foreground opacity-40",
+  NO_SHOW:     "bg-destructive/10 border-destructive/30 text-destructive opacity-60",
 };
 
 const BADGE_STYLES: Record<AppointmentStatus, string> = {
@@ -29,6 +30,7 @@ const BADGE_STYLES: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
   COMPLETED:   "bg-muted text-muted-foreground border-border",
   CANCELLED:   "bg-muted text-muted-foreground border-border",
+  NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const STATUS_DISPLAY_LABELS: Record<AppointmentStatus, string> = {
@@ -37,6 +39,7 @@ const STATUS_DISPLAY_LABELS: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "In Progress",
   COMPLETED:   "Completed",
   CANCELLED:   "Cancelled",
+  NO_SHOW:     "No-show",
 };
 
 const STATUS_LABEL_COLORS: Record<AppointmentStatus, string> = {
@@ -45,6 +48,7 @@ const STATUS_LABEL_COLORS: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "text-success",
   COMPLETED:   "text-muted-foreground",
   CANCELLED:   "text-muted-foreground",
+  NO_SHOW:     "text-destructive",
 };
 
 const MODE_LABELS: Record<AppointmentMode, string> = {

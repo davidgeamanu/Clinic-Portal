@@ -112,10 +112,43 @@ export function useBookedSlots(doctorId: number | null, isoDate: string | null) 
   });
 }
 
+export function useDoctorAvailability(doctorId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.doctors.availability(doctorId ?? 0),
+    queryFn: () => patientApi.getDoctorAvailability(doctorId!),
+    enabled: doctorId !== null,
+  });
+}
+
+export function useAvailableSlots(doctorId: number | null, isoDate: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.doctors.availableSlots(doctorId ?? 0, isoDate ?? ""),
+    queryFn: () => patientApi.getAvailableSlots(doctorId!, isoDate!),
+    enabled: enabled && doctorId !== null && isoDate !== null,
+  });
+}
+
+export function useDoctorReviews(doctorId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.doctors.reviews(doctorId ?? 0),
+    queryFn: () => patientApi.getDoctorReviews(doctorId!),
+    enabled: doctorId !== null,
+  });
+}
+
 export function useMyMedicalRecords() {
   return useQuery({
     queryKey: queryKeys.patients.myMedicalRecords(),
     queryFn: patientApi.getMyMedicalRecords,
+  });
+}
+
+export function useTriage() {
+  return useMutation({
+    mutationFn: (symptoms: string) => patientApi.triage(symptoms),
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to analyze symptoms."));
+    },
   });
 }
 

@@ -8,13 +8,214 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import {
   Stethoscope, DollarSign, FileText, Mail, Hash, MapPin, Lock,
-  ShieldCheck, CheckCircle2, AlertCircle, Save, KeyRound, Star,
+  ShieldCheck, CheckCircle2, AlertCircle, Save, KeyRound, Star, Clock,
 } from "lucide-react";
-import { useDoctorProfile, useUpdateDoctorProfile } from "@/hooks/useDoctor";
+import {
+  useDoctorProfile, useUpdateDoctorProfile,
+  useMyAvailability, useUpdateMyAvailability, useMyReviews,
+} from "@/hooks/useDoctor";
 import { useChangePassword } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import type { AvailabilityWindow, DayOfWeek } from "@/types/api";
+
+const WEEK_DAYS: Array<{ day: DayOfWeek; label: string }> = [
+  { day: "MONDAY",    label: "Monday" },
+  { day: "TUESDAY",   label: "Tuesday" },
+  { day: "WEDNESDAY", label: "Wednesday" },
+  { day: "THURSDAY",  label: "Thursday" },
+  { day: "FRIDAY",    label: "Friday" },
+  { day: "SATURDAY",  label: "Saturday" },
+  { day: "SUNDAY",    label: "Sunday" },
+];
+
+type DaySchedule = { enabled: boolean; start: string; end: string };
+
+const DEFAULT_DAY: DaySchedule = { enabled: false, start: "09:00", end: "17:00" };
+
+function ReviewStars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star key={s} className={cn(
+          "h-3.5 w-3.5",
+          s <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
+        )} />
+      ))}
+    </div>
+  );
+}
+
+function PatientFeedbackCard() {
+  const { data: reviews = [], isLoading } = useMyReviews();
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader>
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Star className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-lg">Patient Feedback</CardTitle>
+            <CardDescription>Ratings and reviews from your completed appointments</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="h-24 rounded-xl bg-muted/50 animate-pulse" />
+        ) : reviews.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No reviews yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {reviews.slice(0, 5).map((r, i) => (
+              <div key={i} className="border-l-2 border-primary/30 pl-3">
+                <div className="flex items-center gap-2">
+                  <ReviewStars rating={r.rating} />
+                  <span className="text-xs text-muted-foreground">
+                    {r.patientName} · {r.visitDate}
+                  </span>
+                </div>
+                {r.review && (
+                  <p className="text-sm text-muted-foreground mt-1 italic">“{r.review}”</p>
+                )}
+              </div>
+            ))}
+            {reviews.length > 5 && (
+              <p className="text-xs text-muted-foreground">
+                Showing the 5 most recent of {reviews.length} reviews.
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function WorkingHoursCard() {
+  const { data: windows, isLoading } = useMyAvailability();
+  const updateAvailability = useUpdateMyAvailability();
+
+  const [schedule, setSchedule] = useState<Record<DayOfWeek, DaySchedule>>(() =>
+    Object.fromEntries(WEEK_DAYS.map(({ day }) => [day, { ...DEFAULT_DAY }])) as Record<DayOfWeek, DaySchedule>
+  );
+
+  // The editor manages one window per day; if the API holds several, the first is shown
+  useEffect(() => {
+    if (!windows) return;
+    setSchedule((prev) => {
+      const next = { ...prev };
+      WEEK_DAYS.forEach(({ day }) => {
+        const w = windows.find((x) => x.dayOfWeek === day);
+        next[day] = w
+          ? { enabled: true, start: w.startTime.slice(0, 5), end: w.endTime.slice(0, 5) }
+          : { ...DEFAULT_DAY };
+      });
+      return next;
+    });
+  }, [windows]);
+
+  const setDay = (day: DayOfWeek, patch: Partial<DaySchedule>) =>
+    setSchedule((prev) => ({ ...prev, [day]: { ...prev[day], ...patch } }));
+
+  const invalidDays = WEEK_DAYS.filter(
+    ({ day }) => schedule[day].enabled && schedule[day].start >= schedule[day].end
+  );
+
+  const handleSave = () => {
+    const payload: AvailabilityWindow[] = WEEK_DAYS
+      .filter(({ day }) => schedule[day].enabled)
+      .map(({ day }) => ({
+        dayOfWeek: day,
+        startTime: `${schedule[day].start}:00`,
+        endTime: `${schedule[day].end}:00`,
+      }));
+    updateAvailability.mutate(payload);
+  };
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader>
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-lg">Working Hours</CardTitle>
+            <CardDescription>
+              Patients can only book inside these windows. Leave every day off to accept any time.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <div className="h-48 rounded-xl bg-muted/50 animate-pulse" />
+        ) : (
+          <>
+            {WEEK_DAYS.map(({ day, label }) => {
+              const d = schedule[day];
+              const invalid = d.enabled && d.start >= d.end;
+              return (
+                <div key={day} className="flex items-center gap-4 py-1">
+                  <Switch
+                    checked={d.enabled}
+                    onCheckedChange={(checked) => setDay(day, { enabled: checked })}
+                    aria-label={`Toggle ${label}`}
+                  />
+                  <span className={cn("w-24 text-sm font-medium", !d.enabled && "text-muted-foreground")}>
+                    {label}
+                  </span>
+                  {d.enabled ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="time"
+                        value={d.start}
+                        onChange={(e) => setDay(day, { start: e.target.value })}
+                        className={cn("w-32", invalid && "border-destructive")}
+                      />
+                      <span className="text-muted-foreground text-sm">to</span>
+                      <Input
+                        type="time"
+                        value={d.end}
+                        onChange={(e) => setDay(day, { end: e.target.value })}
+                        className={cn("w-32", invalid && "border-destructive")}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">Not working</span>
+                  )}
+                </div>
+              );
+            })}
+
+            {invalidDays.length > 0 && (
+              <p className="text-xs text-destructive inline-flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Start time must be before end time
+              </p>
+            )}
+
+            <Separator />
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSave}
+                disabled={invalidDays.length > 0 || updateAvailability.isPending}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {updateAvailability.isPending ? "Saving..." : "Save Working Hours"}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DoctorSettings() {
   const { data: profile, isLoading } = useDoctorProfile();
@@ -215,6 +416,12 @@ export default function DoctorSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Working Hours */}
+          <WorkingHoursCard />
+
+          {/* Patient Feedback */}
+          <PatientFeedbackCard />
 
           {/* Change Password */}
           <Card className="border-border/60">

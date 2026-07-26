@@ -26,11 +26,11 @@ import {
 import { queryKeys } from "@/lib/query-keys";
 import type { AppointmentStatus, PatientHistoryItem } from "@/types/api";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+//Helpers
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
     SCHEDULED: "Upcoming", CONFIRMED: "Confirmed",
-    IN_PROGRESS: "In Progress", COMPLETED: "Completed", CANCELLED: "Cancelled",
+    IN_PROGRESS: "In Progress", COMPLETED: "Completed", CANCELLED: "Cancelled", NO_SHOW: "No-show",
 };
 
 function formatDate(dateStr: string) {
@@ -49,7 +49,7 @@ function formatTime(iso: string) {
     return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
-// ── History Entry (compact for narrow column) ─────────────────────────────────
+// History Entry (compact for narrow column)
 
 function HistoryEntry({ entry, patientProfileId }: { entry: PatientHistoryItem; patientProfileId: number }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +110,7 @@ function HistoryEntry({ entry, patientProfileId }: { entry: PatientHistoryItem; 
     );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// Page
 
 export default function DoctorConsultationNote() {
     const { appointmentId, patientProfileId } = useParams<{ appointmentId: string; patientProfileId: string }>();

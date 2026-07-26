@@ -1,9 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { adminApi } from "@/api/admin";
 import { queryKeys } from "@/lib/query-keys";
 import { getApiErrorMessage } from "@/lib/api";
-import type { AdminCreateDoctorRequest, Role, RoomUpdateRequest } from "@/types/api";
+import type {
+  AdminCreateDoctorRequest,
+  AppointmentMode,
+  AppointmentStatus,
+  Role,
+  RoomUpdateRequest,
+} from "@/types/api";
 
 export function useAdminDepartments() {
   return useQuery({
@@ -34,10 +40,11 @@ export function useUpdateRoom() {
   });
 }
 
-export function useAdminPatients() {
+export function useAdminPatients(page = 0, size = 20, search = "", active?: boolean) {
   return useQuery({
-    queryKey: queryKeys.admin.patients(),
-    queryFn: adminApi.getAdminPatients,
+    queryKey: [...queryKeys.admin.patients(), page, size, search, active ?? "all"],
+    queryFn: () => adminApi.getAdminPatients(page, size, search, active),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -78,10 +85,17 @@ export function useAdminAnalytics() {
   });
 }
 
-export function useAllAppointments() {
+export function useAllAppointments(
+    page = 0,
+    size = 20,
+    search = "",
+    status?: AppointmentStatus,
+    mode?: AppointmentMode,
+) {
   return useQuery({
-    queryKey: queryKeys.admin.appointments(),
-    queryFn: adminApi.getAllAppointments,
+    queryKey: [...queryKeys.admin.appointments(), page, size, search, status ?? "all", mode ?? "all"],
+    queryFn: () => adminApi.getAllAppointments(page, size, search, status, mode),
+    placeholderData: keepPreviousData,
   });
 }
 

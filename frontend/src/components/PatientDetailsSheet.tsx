@@ -7,7 +7,7 @@ import { Mail, Phone, User as UserIcon, Heart, ShieldAlert, ExternalLink } from 
 import { usePatientSummary } from "@/hooks/useDoctor";
 import type { AppointmentResponse, AppointmentStatus, PatientSummary } from "@/types/api";
 
-// ── Formatters ────────────────────────────────────────────────────────────────
+// Formatters
 
 const BLOOD_TYPE_LABELS: Record<string, string> = {
   A_POSITIVE: "A+",  A_NEGATIVE: "A−",
@@ -39,7 +39,7 @@ export function calcAge(dob: string | null): number | null {
   return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 }
 
-// ── Status styling (mirrors the appointments page) ────────────────────────────
+// Status styling (mirrors the appointments page)
 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
   SCHEDULED:   "bg-warning/10 text-warning border-warning/20",
@@ -47,6 +47,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
   COMPLETED:   "bg-muted text-muted-foreground border-border",
   CANCELLED:   "bg-muted text-muted-foreground border-border",
+  NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -55,13 +56,14 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   IN_PROGRESS: "In Progress",
   COMPLETED:   "Completed",
   CANCELLED:   "Cancelled",
+  NO_SHOW:     "No-show",
 };
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
-// ── Sub-sections ──────────────────────────────────────────────────────────────
+// Sub-sections
 
 function ProfileSection({ patient }: { patient: PatientSummary }) {
   const rows = [
@@ -141,7 +143,7 @@ function AppointmentHistorySection({ history }: { history: AppointmentResponse[]
   );
 }
 
-// ── Sheet ─────────────────────────────────────────────────────────────────────
+// Sheet
 
 export function PatientDetailsSheet({
   patientProfileId,

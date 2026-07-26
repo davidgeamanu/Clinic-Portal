@@ -3,12 +3,16 @@ import type {
     AppointmentMode,
     AppointmentResponse,
     AppointmentStatus,
+    AvailabilityWindow,
+    AvailableSlot,
     BookedSlot,
+    DoctorReview,
     DoctorProfileResponse,
     NotificationResponse,
     PatientHistoryItem,
     PatientProfileResponse,
     PatientProfileUpdateRequest,
+    TriageResponse,
 } from "@/types/api";
 
 export interface BookAppointmentRequest {
@@ -55,9 +59,23 @@ export const patientApi = {
     getBookedSlots: (doctorId: number, isoDate: string) =>
         api.get<BookedSlot[]>(`/doctors/${doctorId}/booked-slots`, { params: { date: isoDate } }).then((r) => r.data),
 
+    getDoctorAvailability: (doctorId: number) =>
+        api.get<AvailabilityWindow[]>(`/doctors/${doctorId}/availability`).then((r) => r.data),
+
+    getDoctorReviews: (doctorId: number) =>
+        api.get<DoctorReview[]>(`/doctors/${doctorId}/reviews`).then((r) => r.data),
+
+    getAvailableSlots: (doctorId: number, isoDate: string, durationMinutes = 30) =>
+        api.get<AvailableSlot[]>(`/doctors/${doctorId}/available-slots`, {
+            params: { date: isoDate, durationMinutes },
+        }).then((r) => r.data),
+
     rateAppointment: (appointmentId: number, data: RateAppointmentRequest) =>
         api.post<AppointmentResponse>(`/appointments/${appointmentId}/rate`, data).then((r) => r.data),
 
     getMyMedicalRecords: () =>
         api.get<PatientHistoryItem[]>("/consultation-notes/my-history").then((r) => r.data),
+
+    triage: (symptoms: string) =>
+        api.post<TriageResponse>("/triage", { symptoms }).then((r) => r.data),
 };

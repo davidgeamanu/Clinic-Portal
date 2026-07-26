@@ -23,6 +23,7 @@ const APPOINTMENT_STATUS_STYLES: Record<AppointmentStatus, string> = {
     IN_PROGRESS: "bg-primary/10 text-primary border-primary/20",
     COMPLETED:   "bg-muted text-muted-foreground border-border",
     CANCELLED:   "bg-muted text-muted-foreground border-border",
+    NO_SHOW:     "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function formatDate(iso: string) {
