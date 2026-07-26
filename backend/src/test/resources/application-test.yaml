@@ -9,6 +9,9 @@ spring:
       ddl-auto: create-drop
     open-in-view: false
     defer-datasource-initialization: false
+  flyway:
+    # Tests run on H2 with create-drop; the Postgres migrations don't apply.
+    enabled: false
   sql:
     init:
       mode: never

@@ -16,12 +16,17 @@ spring:
     password: ${DB_PASS}
   jpa:
     hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
+      ddl-auto: validate
     open-in-view: false
-  sql:
-    init:
-      mode: always
+  flyway:
+    # Existing dev databases created by Hibernate ddl-auto get baselined at 0;
+    # every migration is written to be idempotent against such schemas.
+    baseline-on-migrate: true
+    baseline-version: 0
+logging:
+  pattern:
+    # Correlation id (from CorrelationIdFilter / OutboxRelay) next to the level
+    level: "%5p [cid:%X{correlationId:-}]"
 server:
   port: 8080
   servlet:
@@ -35,6 +40,9 @@ app:
     allowed-urls: /auth/register,/auth/logout,/swagger-ui/**,/v3/api-docs/**
   storage:
     location: uploads
+  ai:
+    # Optional: enables Claude-powered symptom triage; keyword fallback when empty
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}
   messaging:
     appointment-booked-queue: clinic.appointment-booked.queue
     appointment-status-changed-queue: clinic.appointment-status-changed.queue

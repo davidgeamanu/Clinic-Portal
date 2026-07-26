@@ -8,6 +8,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+  flyway:
+    # Tests run on H2 with create-drop; the Postgres migrations don't apply.
+    enabled: false
   rabbitmq:
     host: localhost
     port: 5672
@@ -29,3 +32,4 @@ app:
     appointment-booked-queue: test.appointment-booked.queue
     appointment-status-changed-queue: test.appointment-status-changed.queue
     consultation-note-created-queue: test.consultation-note-created.queue
+    dead-letter-queue: test.notifications.dlq

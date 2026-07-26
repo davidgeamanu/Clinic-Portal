@@ -7,13 +7,27 @@ spring:
     password: ${DB_PASS}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
+  flyway:
+    # Existing dev databases created by Hibernate ddl-auto get baselined at 0;
+    # every migration is written to be idempotent against such schemas.
+    baseline-on-migrate: true
+    baseline-version: 0
   rabbitmq:
     host: localhost
     port: 5672
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        # Poison messages: retry in-memory, then reject (not requeue) so the
+        # dead-letter exchange routes them to the DLQ.
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2s
+        default-requeue-rejected: false
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 587
@@ -26,6 +40,10 @@ spring:
           starttls:
             enable: true
 
+logging:
+  pattern:
+    # Correlation id (propagated via RabbitMQ header / CorrelationIdFilter)
+    level: "%5p [cid:%X{correlationId:-}]"
 server:
   port: 8081
   servlet:
@@ -41,3 +59,4 @@ app:
     appointment-booked-queue: clinic.appointment-booked.queue
     appointment-status-changed-queue: clinic.appointment-status-changed.queue
     consultation-note-created-queue: clinic.consultation-note-created.queue
+    dead-letter-queue: clinic.notifications.dlq
