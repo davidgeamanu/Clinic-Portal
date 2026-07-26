@@ -76,8 +76,9 @@
 - Manage rooms (department, type, status)
 - Monitor departments and specializations
 - View dashboard KPIs, weekly charts & analytics
-- Paginated patient and appointment lists
+- Paginated patient and appointment lists with **server-side search and filtering**
 - Force-cancel any appointment
+- Mark a confirmed appointment as a **no-show**
 
 </td>
 </tr>
@@ -147,7 +148,7 @@ When something notable happens (an appointment is booked, its status changes, or
 
 Events are self-contained and carry all the data the notification service needs (names, emails, timestamps), so there are no callbacks into the portal.
 
-Emails are sent through Mailtrap SMTP with color-coded HTML templates per notification type, and can be toggled off via `MAIL_ENABLED`. New notifications are also pushed to the browser in real time over **Server-Sent Events**.
+Emails go through Mailtrap SMTP with color-coded HTML templates per notification type, gated behind `MAIL_ENABLED` (off by default). New notifications are also pushed to the browser in real time over **Server-Sent Events**, dispatched after the transaction commits so the UI never refetches ahead of the write.
 
 ### Messaging Reliability
 
@@ -165,7 +166,8 @@ Emails are sent through Mailtrap SMTP with color-coded HTML templates per notifi
 - **Strategy pattern:** in the notification service, one `@Component` per `NotificationType` builds the human-readable message. Indexed by `NotificationMessageStrategyRegistry`.
 - **Auto-expiry:** `AppointmentExpirationJob` runs every minute and cancels bookings still unconfirmed at their start time, so an abandoned booking stops holding the doctor's slot.
 - **No-shows:** a separate, manual action. Only a doctor or admin can mark a *confirmed* appointment as `NO_SHOW`, and only once its start time has passed — patients cannot mark themselves absent.
-- **Double-booking protection:** the application checks for overlaps, but the real guarantee is a PostgreSQL **GiST exclusion constraint** on `(doctor_id, time range)` — two concurrent bookings for the same slot cannot both commit.
+- **Double-booking protection:** the application checks for overlaps, but the real guarantee is a PostgreSQL **GiST exclusion constraint** on `(doctor_id, time range)` — two concurrent bookings for the same slot cannot both commit. Booking duration is bounded (15–240 minutes) so no single request can reserve an unbounded stretch of a doctor's calendar.
+- **Pagination with server-side filtering:** the admin patient and appointment tables page through `PagedModel`, and search/status/mode filters run in the query rather than over the loaded page — so a match on page four is still found.
 - **Soft-delete:** the `active` flag on `User` controls account visibility. Errors are returned as a consistent `ExceptionBody { timestamp, code, message, details }`.
 
 ---
@@ -191,7 +193,9 @@ Optional settings (Claude API key for AI triage, Mailtrap credentials) go in a `
 
 ### Manual Setup
 
-### Prerequisites
+Running the services directly, without containers.
+
+#### Prerequisites
 
 | Tool | Version | Download |
 |------|---------|----------|
@@ -203,16 +207,16 @@ Optional settings (Claude API key for AI triage, Mailtrap credentials) go in a `
 
 ---
 
-### Installation
+#### Installation
 
-#### 1. Clone the Repository
+##### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/davidgeamanu/Clinic-Portal.git
 cd Clinic-Portal
 ```
 
-#### 2. Set Up the Databases
+##### 2. Set Up the Databases
 
 ```sql
 CREATE DATABASE clinic_portal;
@@ -223,7 +227,7 @@ CREATE DATABASE clinic_notifications_db;
 
 ---
 
-#### 3. Configure Environment Variables
+##### 3. Configure Environment Variables
 
 <details>
 <summary><b>Windows (PowerShell)</b></summary>
@@ -255,7 +259,7 @@ export MAIL_ENABLED=true
 
 ---
 
-#### 4. Start RabbitMQ
+##### 4. Start RabbitMQ
 
 The queues are consumer-declared, so RabbitMQ just needs to be running on `localhost:5672` before you start the backend. No manual queue setup needed.
 
@@ -291,18 +295,18 @@ sudo systemctl start rabbitmq-server
 
 ---
 
-#### 5. Set Up Mailtrap (for email notifications)
+##### 5. Set Up Mailtrap (for email notifications)
 
 The notification service sends emails through Mailtrap's SMTP sandbox, so nothing lands in a real inbox during development.
 
 1. Create a free account at [mailtrap.io](https://mailtrap.io/) and open (or create) an **Email Sandbox** inbox.
 2. Go to the inbox's **SMTP Settings** and copy the **Username** and **Password**.
 3. Set those as `MAILTRAP_USERNAME` and `MAILTRAP_PASSWORD` (see [Environment Variables](#environment-variables)).
-4. Leave `MAIL_ENABLED=true` to send to the sandbox, or set it to `false` to skip emails entirely. In-app notifications still work either way.
+4. Set `MAIL_ENABLED=true` to actually send to the sandbox — **email is off unless you opt in.** In-app and SSE notifications work either way.
 
 ---
 
-#### 6. Run the Backend
+##### 6. Run the Backend
 
 ```bash
 cd backend
@@ -313,7 +317,7 @@ Starts on **`http://localhost:8080`**
 
 ---
 
-#### 7. Run the Notification Service
+##### 7. Run the Notification Service
 
 ```bash
 cd notification-service
@@ -324,7 +328,7 @@ Starts on **`http://localhost:8081`**
 
 ---
 
-#### 8. Run the Frontend
+##### 8. Run the Frontend
 
 ```bash
 cd frontend
@@ -344,7 +348,7 @@ Starts on **`http://localhost:5173`**. The Vite dev server proxies `/api/notific
 | `JWT_SECRET` | both | JWT signing secret (must match across both services) |
 | `MAILTRAP_USERNAME` | notification-service | Mailtrap SMTP username |
 | `MAILTRAP_PASSWORD` | notification-service | Mailtrap SMTP password |
-| `MAIL_ENABLED` | notification-service | Toggles email sending (default: `true`) |
+| `MAIL_ENABLED` | notification-service | Toggles email sending (default: `false` — set to `true` to send) |
 | `ANTHROPIC_API_KEY` | backend | Optional — enables Claude-powered symptom triage. Without it, a keyword-based fallback classifier is used |
 
 ---
@@ -378,7 +382,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `GET` | `/api/admin/departments` | All specializations with counts |
 | `GET` | `/api/admin/rooms` | All rooms |
 | `PATCH` | `/api/admin/rooms/{id}` | Update room department, type, or status |
-| `GET` | `/api/admin/patients?page=&size=` | Patients (paginated) |
+| `GET` | `/api/admin/patients?page=&size=&search=&active=` | Patients (paginated; search and status filter applied across the whole table) |
 | `GET` | `/api/admin/patients/{id}/appointments` | Appointments for a patient |
 | `GET` | `/api/admin/doctors/{id}/appointments` | Appointments for a doctor |
 | `GET` | `/api/admin/users` | All users |
@@ -387,7 +391,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `POST` | `/api/admin/doctors` | Create a doctor account and profile |
 | `PATCH` | `/api/admin/doctors/{doctorProfileId}/room` | Assign or unassign a consult room for a doctor |
 | `GET` | `/api/admin/specializations` | All specializations |
-| `GET` | `/api/admin/appointments?page=&size=` | Appointments (paginated) |
+| `GET` | `/api/admin/appointments?page=&size=&search=&status=&mode=` | Appointments (paginated; search, status and mode filters applied across the whole table) |
 | `PATCH` | `/api/admin/appointments/{id}/cancel` | Force-cancel any appointment |
 
 ### Patients & Doctors
@@ -401,7 +405,7 @@ All endpoints except `/api/auth/login` and `/api/auth/register` require an activ
 | `GET` | `/api/doctors/specialization/{specializationId}` | Any | Doctors by specialization |
 | `GET` | `/api/doctors/{id}/booked-slots?date=` | Any | Booked slots for a doctor on a given date |
 | `GET` | `/api/doctors/{id}/availability` | Any | A doctor's weekly working hours |
-| `GET` | `/api/doctors/{id}/available-slots?date=` | Any | Free bookable slots computed from working hours minus booked appointments |
+| `GET` | `/api/doctors/{id}/available-slots?date=&durationMinutes=` | Any | Free bookable slots computed from working hours minus booked appointments (empty if no hours set for that weekday) |
 | `GET` | `/api/doctors/{id}/reviews` | Any | Patient ratings & reviews for a doctor |
 | `GET` | `/api/doctors/me` | DOCTOR | Own doctor profile |
 | `PUT` | `/api/doctors/me` | DOCTOR | Update biography and consultation fee |
@@ -527,8 +531,8 @@ Clinic-Portal/
 - **Redis** - cache doctor profiles, specialization lists, available slots, and dashboard KPI queries, with cache invalidation on writes
 
 ### Infrastructure & Scaling
-- **Kubernetes** - orchestrate the backend, notification service, PostgreSQL, and RabbitMQ as pods with horizontal scaling, health checks, and rolling deployments
 - **Distributed lock (ShedLock)** - prevent duplicate `AppointmentExpirationJob` and `OutboxRelay` runs when running multiple backend instances
+- **Rate limiting** - throttle booking and other write endpoints per user, so one client cannot flood the scheduler
 - **Service decomposition** - split the backend into smaller services (appointment-service, user-service, consultation-service) if the domain grows significantly
 
 ### Patient-Facing Features
