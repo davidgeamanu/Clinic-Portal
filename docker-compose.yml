@@ -1,0 +1,87 @@
+# Clinic Portal — full stack.
+#
+#   docker compose up --build
+#
+# Frontend:        http://localhost:5173
+# Backend API:     http://localhost:8080/api  (Swagger: /api/swagger-ui/index.html)
+# Notifications:   http://localhost:8081/api  (Swagger: /api/swagger-ui/index.html)
+# RabbitMQ UI:     http://localhost:15672     (guest/guest)
+#
+# Optional env vars (see .env.example): JWT_SECRET, DB_PASS, ANTHROPIC_API_KEY,
+# MAILTRAP_USERNAME, MAILTRAP_PASSWORD, MAIL_ENABLED.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/clinic_portal
+      SPRING_RABBITMQ_HOST: rabbitmq
+      DB_PASS: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret-change-me-32-bytes-min}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/clinic_notifications_db
+      SPRING_RABBITMQ_HOST: rabbitmq
+      DB_PASS: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret-change-me-32-bytes-min}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAILTRAP_USERNAME: ${MAILTRAP_USERNAME:-}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD:-}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+      - notification-service
+
+volumes:
+  postgres-data:
+  uploads:

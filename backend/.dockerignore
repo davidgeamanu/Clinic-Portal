@@ -1,0 +1,31 @@
+# Build output
+target/
+
+# Local file storage — patient documents never belong in an image
+uploads/
+test-uploads/
+
+# Secrets. The Dockerfile only copies pom.xml and src/, but keep these out of
+# the build context too so a future `COPY . .` cannot bake them in.
+.env
+.env.*
+
+# Maven wrapper: the build stage uses `mvn` from the base image
+mvnw
+mvnw.cmd
+.mvn/
+
+# IDE, docs and local notes
+.idea/
+*.iml
+.vscode/
+*.md
+Postman Screenshots/
+
+# Logs
+logs/
+*.log
+
+# Docker files themselves
+Dockerfile
+.dockerignore

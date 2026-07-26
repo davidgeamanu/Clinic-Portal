@@ -1,0 +1,28 @@
+# Dependencies and build output — `npm ci` and `npm run build` regenerate these
+node_modules/
+dist/
+dist-ssr/
+
+# Secrets. This matters more here than in the Java services: the Dockerfile
+# does `COPY . .`, and Vite inlines any VITE_* variable into the bundle at
+# build time, where it would be readable by anyone loading the page.
+.env
+.env.*
+*.local
+
+# IDE, OS and docs
+.idea/
+*.iml
+.vscode/
+*.md
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Docker files themselves. nginx.conf is NOT excluded — the runtime stage
+# copies it out of the build context.
+Dockerfile
+.dockerignore

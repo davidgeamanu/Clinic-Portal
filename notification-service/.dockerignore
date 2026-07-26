@@ -1,0 +1,26 @@
+# Build output
+target/
+
+# Secrets. The Dockerfile only copies pom.xml and src/, but keep these out of
+# the build context too so a future `COPY . .` cannot bake them in.
+.env
+.env.*
+
+# Maven wrapper: the build stage uses `mvn` from the base image
+mvnw
+mvnw.cmd
+.mvn/
+
+# IDE and docs
+.idea/
+*.iml
+.vscode/
+*.md
+
+# Logs
+logs/
+*.log
+
+# Docker files themselves
+Dockerfile
+.dockerignore
