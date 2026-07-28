@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/query-client";
 
@@ -53,7 +54,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <RoleProvider>
-            <Routes>
+            <SidebarProvider>
+              <Routes>
               {/* Public */}
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
@@ -94,7 +96,8 @@ const App = () => (
               <Route path="/patient/settings" element={<ProtectedRoute allowedRoles={["PATIENT"]}><PatientSettings /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </SidebarProvider>
           </RoleProvider>
         </BrowserRouter>
       </TooltipProvider>

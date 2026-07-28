@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useRole, type UserRole } from "@/contexts/RoleContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { useLogout } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Users, Calendar, Stethoscope, Pill, FileText,
@@ -55,7 +55,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export function RoleSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, toggle } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useRole();
@@ -137,7 +137,9 @@ export function RoleSidebar() {
 
         {/* Collapse toggle */}
         <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggle}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
             className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-accent transition-colors"
         >
           <ChevronLeft
