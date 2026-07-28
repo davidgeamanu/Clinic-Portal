@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { DoctorIllustration } from "@/components/illustrations/doctor";
+import { StethoscopeIllustration } from "@/components/illustrations/stethoscope";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -277,7 +280,11 @@ export default function BookAppointment() {
                 ))}
               </div>
             ) : specs.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">No doctors are currently available.</p>
+              <EmptyState
+                illustration={DoctorIllustration}
+                title="No doctors are available"
+                description="Nobody is accepting bookings right now. Please check back a little later."
+              />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ spec, count }) => (
@@ -317,7 +324,16 @@ export default function BookAppointment() {
             </div>
 
             {filteredDoctors.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">No doctors available in this specialization.</p>
+              <EmptyState
+                illustration={StethoscopeIllustration}
+                title={`No ${selectedSpec.name} doctors available`}
+                description="Nobody in this department is taking bookings yet. Try another specialization."
+                action={
+                  <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
+                    <ArrowLeft className="h-4 w-4" /> Choose another department
+                  </Button>
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredDoctors.map((doc) => {

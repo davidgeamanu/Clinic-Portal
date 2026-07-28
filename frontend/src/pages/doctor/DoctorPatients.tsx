@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { HeartPulseIllustration } from "@/components/illustrations/heart-pulse";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { formatBloodType, formatGender, calcAge } from "@/components/PatientDetailsSheet";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -105,10 +108,18 @@ export default function DoctorPatients() {
                         <div key={i} className="rounded-xl border border-border bg-card p-5 h-32 animate-pulse" />
                     ))}
                 </div>
+            ) : patients.length === 0 ? (
+                <EmptyState
+                    illustration={HeartPulseIllustration}
+                    title="No patients yet"
+                    description="Patients appear here once you've had an appointment with them."
+                />
             ) : filtered.length === 0 ? (
-                <p className="text-center text-muted-foreground py-12">
-                    {patients.length === 0 ? "No patients yet." : "No patients match your search."}
-                </p>
+                <EmptyState
+                    illustration={MicroscopeIllustration}
+                    title="No patients match your search"
+                    description="Try a different name or email."
+                />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filtered.map((p) => (

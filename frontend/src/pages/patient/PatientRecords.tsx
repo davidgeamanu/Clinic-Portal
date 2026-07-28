@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { ClipboardIllustration } from "@/components/illustrations/clipboard";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { ConsultationReportPDF } from "@/components/ConsultationReportPDF";
 import { DocumentRow } from "@/components/DocumentRow";
 import { Input } from "@/components/ui/input";
@@ -132,6 +136,7 @@ function RecordCard({
 }
 
 export default function PatientRecords() {
+  const navigate = useNavigate();
   const { data: records = [], isLoading } = useMyMedicalRecords();
   const { data: profile } = usePatientProfile();
   const [search, setSearch] = useState("");
@@ -166,10 +171,19 @@ export default function PatientRecords() {
             <div key={i} className="rounded-xl border border-border bg-card p-5 h-28 animate-pulse" />
           ))}
         </div>
+      ) : records.length === 0 ? (
+        <EmptyState
+          illustration={ClipboardIllustration}
+          title="No records yet"
+          description="Notes from your consultations will appear here once you've seen a doctor."
+          action={<Button onClick={() => navigate("/patient/book")}>Book an appointment</Button>}
+        />
       ) : filtered.length === 0 ? (
-        <p className="text-center text-muted-foreground py-12">
-          {records.length === 0 ? "You don't have any consultation notes yet." : "No records match your search."}
-        </p>
+        <EmptyState
+          illustration={MicroscopeIllustration}
+          title="No records match your search"
+          description="Try a different doctor, diagnosis or date."
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((record) => (

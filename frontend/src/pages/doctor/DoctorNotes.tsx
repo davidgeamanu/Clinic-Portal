@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { ClipboardIllustration } from "@/components/illustrations/clipboard";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { ConsultationReportPDF } from "@/components/ConsultationReportPDF";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -168,10 +171,18 @@ export default function DoctorNotes() {
                   <div key={i} className="rounded-xl border border-border bg-card p-5 h-24 animate-pulse" />
               ))}
             </div>
+        ) : notes.length === 0 ? (
+            <EmptyState
+                illustration={ClipboardIllustration}
+                title="No consultation notes yet"
+                description="Notes you record during a consultation are collected here."
+            />
         ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">
-              {notes.length === 0 ? "No consultation notes yet." : "No notes match your search."}
-            </p>
+            <EmptyState
+                illustration={MicroscopeIllustration}
+                title="No notes match your search"
+                description="Try a different patient name, diagnosis or date."
+            />
         ) : (
             <div className="space-y-3">
               {filtered.map((note) => (

@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import type { ElementType } from "react";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -247,7 +249,12 @@ export default function DoctorSchedule() {
               </h3>
 
               {dayAppts.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">No appointments scheduled for this day.</div>
+                  <EmptyState
+                      size="md"
+                      illustration={CalendarIllustration}
+                      title={`Nothing booked for ${DAY_FULL[selectedDay]}`}
+                      description="This day is completely free. Pick another day to see its schedule."
+                  />
               ) : (
                   <div className="space-y-3">
                     {dayAppts.map((apt, i) => {

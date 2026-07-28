@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -268,7 +271,24 @@ export default function PatientAppointments() {
       )}
 
       {upcomingGroups.length === 0 && pastGroups.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">No appointments found.</p>
+        appointments.length === 0 ? (
+          <EmptyState
+            illustration={CalendarIllustration}
+            title="No appointments yet"
+            description="Book a visit and it will show up here, along with everything you've attended."
+            action={
+              <Button onClick={() => navigate("/patient/book")} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Book an appointment
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            illustration={MicroscopeIllustration}
+            title="No appointments match your filters"
+            description="Try a different doctor, reason or status."
+          />
+        )
       )}
 
       {/* Cancel confirmation */}

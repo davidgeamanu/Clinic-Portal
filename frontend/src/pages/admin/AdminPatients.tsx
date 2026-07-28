@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
+import { HeartPulseIllustration } from "@/components/illustrations/heart-pulse";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +117,12 @@ function PatientDetails({ patient, onToggleStatus }: { patient: AdminPatient; on
                         </div>
                     )}
                     {upcoming.length === 0 && past.length === 0 && (
-                        <p className="text-sm text-muted-foreground">No appointments on record.</p>
+                        <EmptyState
+                            size="sm"
+                            illustration={CalendarIllustration}
+                            title="No appointments on record"
+                            description="This patient has not booked a visit yet."
+                        />
                     )}
                 </>
             )}
@@ -153,6 +162,7 @@ export default function AdminPatients() {
     const active = statusFilter === "all" ? undefined : statusFilter === "active";
     const { data: patientsPage, isLoading } = useAdminPatients(page, 20, debouncedSearch, active);
     const filtered = patientsPage?.content ?? [];
+    const hasFilters = debouncedSearch !== "" || statusFilter !== "all";
 
     // A narrowed result set may have fewer pages than the one we were on
     React.useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter]);
@@ -187,7 +197,25 @@ export default function AdminPatients() {
                     {isLoading ? (
                         <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading patients...</td></tr>
                     ) : filtered.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No patients found.</td></tr>
+                        <tr>
+                            <td colSpan={6}>
+                                {hasFilters ? (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={MicroscopeIllustration}
+                                        title="No patients match your filters"
+                                        description="Try a different name or email, or clear the status filter."
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={HeartPulseIllustration}
+                                        title="No patients yet"
+                                        description="Patients appear here as soon as they register an account."
+                                    />
+                                )}
+                            </td>
+                        </tr>
                     ) : (
                         filtered.map((p) => (
                             <tr key={p.patientProfileId} className="border-b border-border hover:bg-muted/30 transition-colors">

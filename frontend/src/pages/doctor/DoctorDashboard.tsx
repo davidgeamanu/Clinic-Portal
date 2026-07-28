@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { RolePageShell } from "@/components/RolePageShell";
 import { StatsCard } from "@/components/StatsCard";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
 import { Calendar, Users, Clock, CheckCircle2, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -122,7 +124,12 @@ export default function DoctorDashboard() {
               <Button variant="outline" size="sm" onClick={() => navigate("/doctor/schedule")}>View Full Schedule</Button>
             </div>
             {todayAppts.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-6 text-center">No appointments scheduled for today.</p>
+                <EmptyState
+                    size="sm"
+                    illustration={CalendarIllustration}
+                    title="Nothing booked today"
+                    description="Your day is clear. New bookings will show up here automatically."
+                />
             ) : (
                 <div className="space-y-3">
                   {todayAppts.map((apt) => {

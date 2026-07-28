@@ -43,6 +43,12 @@
     --info: 210 100% 52%;
     --info-foreground: 0 0% 100%;
 
+    /* two-tone palette for the empty-state illustrations */
+    --illus-line: 173 58% 39%;
+    --illus-tint: 173 44% 89%;
+    --illus-accent: 173 60% 26%;
+    --illus-paper: 0 0% 100%;
+
     --sidebar-background: 210 40% 11%;
     --sidebar-foreground: 210 20% 85%;
     --sidebar-primary: 173 58% 50%;
@@ -74,6 +80,14 @@
     --border: 210 30% 18%;
     --input: 210 30% 18%;
     --ring: 173 58% 45%;
+
+    /* the pale tint would glow on a near-black card, so it inverts to a dark
+       wash and the accent goes light to keep the same emphasis */
+    --illus-line: 173 58% 52%;
+    --illus-tint: 173 32% 22%;
+    --illus-accent: 173 45% 72%;
+    --illus-paper: 210 40% 10%;
+
     --sidebar-background: 210 40% 5%;
     --sidebar-foreground: 210 20% 85%;
     --sidebar-primary: 173 58% 50%;
@@ -98,5 +112,30 @@
 @layer utilities {
   .glass-card {
     @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
+  }
+}
+
+/* Applied to <path>/<rect> inside the illustration components so the artwork
+   follows the theme instead of the hardcoded fills it shipped with. */
+@layer components {
+  .il-line {
+    fill: hsl(var(--illus-line));
+  }
+
+  .il-tint {
+    fill: hsl(var(--illus-tint));
+  }
+
+  .il-accent {
+    fill: hsl(var(--illus-accent));
+  }
+
+  .il-paper {
+    fill: hsl(var(--illus-paper));
+  }
+
+  .il-stroke {
+    fill: none;
+    stroke: hsl(var(--illus-line));
   }
 }

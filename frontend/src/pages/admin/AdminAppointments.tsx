@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +88,7 @@ export default function AdminAppointments() {
         modeFilter === "all" ? undefined : modeFilter,
     );
     const filtered = appointmentsPage?.content ?? [];
+    const hasFilters = debouncedSearch !== "" || statusFilter !== "all" || modeFilter !== "all";
 
     // A narrowed result set may have fewer pages than the one we were on
     useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, modeFilter]);
@@ -146,8 +150,22 @@ export default function AdminAppointments() {
                         </tr>
                     ) : filtered.length === 0 ? (
                         <tr>
-                            <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                No appointments found.
+                            <td colSpan={8}>
+                                {hasFilters ? (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={MicroscopeIllustration}
+                                        title="No appointments match your filters"
+                                        description="Try a different patient or doctor name, status or mode."
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={CalendarIllustration}
+                                        title="No appointments yet"
+                                        description="Every booking made across the clinic will be listed here."
+                                    />
+                                )}
                             </td>
                         </tr>
                     ) : (

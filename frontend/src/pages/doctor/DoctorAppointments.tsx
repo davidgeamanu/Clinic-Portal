@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -297,7 +300,19 @@ export default function DoctorAppointments() {
             )}
 
             {upcomingGroups.length === 0 && pastGroups.length === 0 && (
-                <p className="text-center text-muted-foreground py-12">No appointments found.</p>
+                appointments.length === 0 ? (
+                    <EmptyState
+                        illustration={CalendarIllustration}
+                        title="No appointments yet"
+                        description="Bookings from patients will appear here as soon as they come in."
+                    />
+                ) : (
+                    <EmptyState
+                        illustration={MicroscopeIllustration}
+                        title="No appointments match your filters"
+                        description="Try a different patient name or status."
+                    />
+                )
             )}
 
             {/* Confirmation dialog */}

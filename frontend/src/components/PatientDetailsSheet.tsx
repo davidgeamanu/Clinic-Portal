@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, User as UserIcon, Heart, ShieldAlert, ExternalLink } from "lucide-react";
@@ -121,7 +123,12 @@ function AppointmentHistorySection({ history }: { history: AppointmentResponse[]
         Appointment History ({history.length})
       </p>
       {history.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No appointments on record.</p>
+        <EmptyState
+          size="sm"
+          illustration={CalendarIllustration}
+          title="No appointments on record"
+          description="You have not seen this patient yet."
+        />
       ) : (
         <div className="space-y-2">
           {history.map((a) => (
