@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { RolePageShell } from "@/components/RolePageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarIllustration } from "@/components/illustrations/calendar";
+import { DoctorIllustration } from "@/components/illustrations/doctor";
+import { MicroscopeIllustration } from "@/components/illustrations/microscope";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,7 +152,12 @@ function DoctorDetails({ doctor, onToggleStatus }: { doctor: DoctorProfileRespon
                         </div>
                     )}
                     {upcoming.length === 0 && past.length === 0 && (
-                        <p className="text-sm text-muted-foreground">No appointments on record.</p>
+                        <EmptyState
+                            size="sm"
+                            illustration={CalendarIllustration}
+                            title="No appointments on record"
+                            description="This doctor has not been booked yet."
+                        />
                     )}
                 </>
             )}
@@ -283,14 +292,19 @@ export default function AdminDoctors() {
     const [createOpen, setCreateOpen] = useState(false);
     const [searchParams] = useSearchParams();
 
-    const departments = [...new Set(
-        doctors.flatMap((d) => d.specializations.map((s) => s.name))
-    )].sort();
+    // Every seeded specialization, not just the ones that already have a doctor.
+    // Deriving this from `doctors` meant an empty department was missing from the
+    // list, so "Personnel" on it fell through the guard below and showed everyone.
+    const { data: specializations = [] } = useSpecializations();
+    const departments = useMemo(
+        () => specializations.map((s) => s.name).sort(),
+        [specializations],
+    );
 
+    const deptParam = searchParams.get("dept");
     useEffect(() => {
-        const dept = searchParams.get("dept");
-        if (dept && departments.includes(dept)) setDeptFilter(dept);
-    }, [searchParams, departments]);
+        if (deptParam && departments.includes(deptParam)) setDeptFilter(deptParam);
+    }, [deptParam, departments]);
 
     const filtered = doctors.filter((d) => {
         const name = `${d.firstName} ${d.lastName}`.toLowerCase();
@@ -332,7 +346,25 @@ export default function AdminDoctors() {
                     {isLoading ? (
                         <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading doctors...</td></tr>
                     ) : filtered.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No doctors found.</td></tr>
+                        <tr>
+                            <td colSpan={6}>
+                                {doctors.length === 0 ? (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={DoctorIllustration}
+                                        title="No doctors yet"
+                                        description="Create a doctor account and it will show up in this list."
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        size="md"
+                                        illustration={MicroscopeIllustration}
+                                        title="No doctors match your search"
+                                        description="Try a different name or department."
+                                    />
+                                )}
+                            </td>
+                        </tr>
                     ) : (
                         filtered.map((doc) => (
                             <tr key={doc.id} className="border-b border-border hover:bg-muted/30 transition-colors">
